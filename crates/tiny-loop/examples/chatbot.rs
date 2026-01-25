@@ -1,7 +1,10 @@
-use std::io::{self, Write};
+mod common;
+
+use common::run_cli_loop;
 use tiny_loop::{Agent, llm::OpenAIProvider};
 
-fn create_agent() -> Agent {
+#[tokio::main]
+async fn main() {
     let api_key = std::env::var("LLM_API_KEY").expect("LLM_API_KEY not set");
 
     let llm = OpenAIProvider::new()
@@ -9,30 +12,7 @@ fn create_agent() -> Agent {
         .base_url("https://openrouter.ai/api/v1")
         .model("google/gemini-3-flash-preview");
 
-    Agent::new(llm).system("You are a helpful assistant")
-}
+    let agent = Agent::new(llm).system("You are a helpful assistant");
 
-#[tokio::main]
-async fn main() {
-    let mut agent = create_agent();
-
-    println!("Chatbot started. Type 'quit' to exit.\n");
-
-    loop {
-        print!("> ");
-        io::stdout().flush().unwrap();
-
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
-        let input = input.trim();
-
-        if input == "quit" {
-            break;
-        }
-
-        match agent.chat(input).await {
-            Ok(response) => println!("\n{}\n", response),
-            Err(e) => eprintln!("Error: {}\n", e),
-        }
-    }
+    run_cli_loop(agent).await
 }
