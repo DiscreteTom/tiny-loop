@@ -100,7 +100,7 @@ impl super::LLMProvider for OpenAIProvider {
         &self,
         messages: &[Message],
         tools: &[ToolDefinition],
-    ) -> Result<Message, Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<Message> {
         let request = ChatRequest {
             model: self.model.clone(),
             messages: messages.to_vec(),

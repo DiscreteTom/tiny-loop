@@ -48,7 +48,7 @@ impl<P: LLMProvider> AgentLoop<P> {
     }
 
     /// Run the agent loop until completion
-    pub async fn run(&mut self) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn run(&mut self) -> anyhow::Result<String> {
         loop {
             let message = self
                 .provider
