@@ -5,36 +5,50 @@ use serde::{Deserialize, Serialize};
 
 /// Request payload for OpenAI chat completions API
 #[derive(Serialize)]
-pub struct ChatRequest {
+struct ChatRequest {
+    /// Model ID
     model: String,
+    /// Conversation messages
     messages: Vec<Message>,
+    /// Available tools for the model
     tools: Vec<ToolDefinition>,
+    /// Sampling temperature (0-2)
     #[serde(skip_serializing_if = "Option::is_none")]
     temperature: Option<f32>,
+    /// Maximum tokens to generate
     #[serde(skip_serializing_if = "Option::is_none")]
     max_tokens: Option<u32>,
 }
 
 /// Response from OpenAI chat completions API
 #[derive(Deserialize)]
-pub struct ChatResponse {
+struct ChatResponse {
+    /// List of completion choices
     choices: Vec<Choice>,
 }
 
 /// Single completion choice from the API response
 #[derive(Deserialize)]
-pub struct Choice {
+struct Choice {
+    /// Assistant's response message
     message: Message,
 }
 
 /// OpenAI-compatible LLM provider
 pub struct OpenAIProvider {
+    /// HTTP client for API requests
     client: reqwest::Client,
+    /// API base URL
     base_url: String,
+    /// API authentication key
     api_key: String,
+    /// Model identifier
     model: String,
+    /// Sampling temperature
     temperature: Option<f32>,
+    /// Maximum tokens to generate
     max_tokens: Option<u32>,
+    /// Additional HTTP headers
     custom_headers: HeaderMap,
 }
 
@@ -45,6 +59,7 @@ impl Default for OpenAIProvider {
 }
 
 impl OpenAIProvider {
+    /// Create a new OpenAI provider with default settings
     pub fn new() -> Self {
         Self {
             client: reqwest::Client::new(),
