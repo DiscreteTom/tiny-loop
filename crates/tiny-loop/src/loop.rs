@@ -6,18 +6,18 @@ use crate::{
 };
 
 /// Agent loop that coordinates LLM calls and tool execution
-pub struct AgentLoop<P: LLMProvider> {
-    provider: P,
+pub struct AgentLoop {
+    llm: Box<dyn LLMProvider>,
     executor: Box<dyn ToolExecutor>,
     pub messages: Vec<Message>,
     tools: Vec<ToolDefinition>,
 }
 
-impl<P: LLMProvider> AgentLoop<P> {
+impl AgentLoop {
     /// Create a new agent loop
-    pub fn new(provider: P) -> Self {
+    pub fn new(llm: impl LLMProvider + 'static) -> Self {
         Self {
-            provider,
+            llm: Box::new(llm),
             messages: Vec::new(),
             executor: Box::new(ParallelExecutor::new()),
             tools: Vec::new(),
@@ -48,7 +48,7 @@ impl<P: LLMProvider> AgentLoop<P> {
     /// Run the agent loop until completion
     pub async fn run(&mut self) -> anyhow::Result<String> {
         loop {
-            let message = self.provider.call(&self.messages, &self.tools).await?;
+            let message = self.llm.call(&self.messages, &self.tools).await?;
 
             self.messages.push(message.clone());
 
