@@ -174,10 +174,17 @@ impl OpenAIProvider {
     /// use tiny_loop::llm::OpenAIProvider;
     ///
     /// let provider = OpenAIProvider::new()
-    ///     .header("X-Custom-Header", "value");
+    ///     .header("x-custom-header", "value");
     /// ```
-    pub fn header(mut self, key: impl Into<HeaderName>, value: impl Into<HeaderValue>) -> Self {
-        self.custom_headers.insert(key.into(), value.into());
+    ///
+    /// # Panics
+    ///
+    /// Panics if the header name or value contains invalid characters.
+    pub fn header(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.custom_headers.insert(
+            HeaderName::try_from(key.into()).unwrap(),
+            HeaderValue::try_from(value.into()).unwrap(),
+        );
         self
     }
 }
