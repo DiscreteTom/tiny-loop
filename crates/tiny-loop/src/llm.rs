@@ -1,7 +1,9 @@
+mod openai;
+
 use crate::types::{Message, ToolDefinition};
 use async_trait::async_trait;
 
-pub mod openai;
+pub use openai::*;
 
 /// LLM provider trait for making API calls
 #[async_trait]

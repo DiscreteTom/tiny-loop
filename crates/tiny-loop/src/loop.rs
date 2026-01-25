@@ -106,7 +106,7 @@ impl<P: LLMProvider> AgentLoop<P> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::llm::openai::OpenAIProvider;
+    use crate::llm::OpenAIProvider;
     use tiny_loop_macros::tool_internal;
 
     /// Fetch a URL.

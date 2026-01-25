@@ -35,6 +35,17 @@ struct Choice {
 }
 
 /// OpenAI-compatible LLM provider
+///
+/// # Examples
+///
+/// ```
+/// use tiny_loop::llm::OpenAIProvider;
+///
+/// let provider = OpenAIProvider::new()
+///     .api_key("sk-...")
+///     .model("gpt-4o")
+///     .temperature(0.7);
+/// ```
 pub struct OpenAIProvider {
     /// HTTP client for API requests
     client: reqwest::Client,
@@ -60,6 +71,14 @@ impl Default for OpenAIProvider {
 
 impl OpenAIProvider {
     /// Create a new OpenAI provider with default settings
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiny_loop::llm::OpenAIProvider;
+    ///
+    /// let provider = OpenAIProvider::new();
+    /// ```
     pub fn new() -> Self {
         Self {
             client: reqwest::Client::new(),
@@ -72,37 +91,91 @@ impl OpenAIProvider {
         }
     }
 
-    /// Set the base URL for the API endpoint
+    /// Set the base URL for the API endpoint (default: `https://api.openai.com/v1`)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiny_loop::llm::OpenAIProvider;
+    ///
+    /// let provider = OpenAIProvider::new()
+    ///     .base_url("https://api.custom.com/v1");
+    /// ```
     pub fn base_url(mut self, value: impl Into<String>) -> Self {
         self.base_url = value.into();
         self
     }
 
-    /// Set the API key for authentication
+    /// Set the API key for authentication (default: empty string)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiny_loop::llm::OpenAIProvider;
+    ///
+    /// let provider = OpenAIProvider::new()
+    ///     .api_key("sk-...");
+    /// ```
     pub fn api_key(mut self, value: impl Into<String>) -> Self {
         self.api_key = value.into();
         self
     }
 
-    /// Set the model name to use
+    /// Set the model name to use (default: `gpt-4o`)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiny_loop::llm::OpenAIProvider;
+    ///
+    /// let provider = OpenAIProvider::new()
+    ///     .model("gpt-4o-mini");
+    /// ```
     pub fn model(mut self, value: impl Into<String>) -> Self {
         self.model = value.into();
         self
     }
 
-    /// Set the temperature for response randomness
+    /// Set the temperature for response randomness (default: `None`)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiny_loop::llm::OpenAIProvider;
+    ///
+    /// let provider = OpenAIProvider::new()
+    ///     .temperature(0.7);
+    /// ```
     pub fn temperature(mut self, value: impl Into<Option<f32>>) -> Self {
         self.temperature = value.into();
         self
     }
 
-    /// Set the maximum number of tokens to generate
+    /// Set the maximum number of tokens to generate (default: `None`)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiny_loop::llm::OpenAIProvider;
+    ///
+    /// let provider = OpenAIProvider::new()
+    ///     .max_tokens(1000);
+    /// ```
     pub fn max_tokens(mut self, value: impl Into<Option<u32>>) -> Self {
         self.max_tokens = value.into();
         self
     }
 
     /// Add a custom HTTP header to requests
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiny_loop::llm::OpenAIProvider;
+    ///
+    /// let provider = OpenAIProvider::new()
+    ///     .header("X-Custom-Header", "value");
+    /// ```
     pub fn header(mut self, key: impl Into<HeaderName>, value: impl Into<HeaderValue>) -> Self {
         self.custom_headers.insert(key.into(), value.into());
         self
