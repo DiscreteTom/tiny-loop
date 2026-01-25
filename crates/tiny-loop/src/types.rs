@@ -1,3 +1,4 @@
+use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -80,7 +81,31 @@ pub struct ToolFunction {
     /// Function description
     pub description: String,
     /// JSON schema for function parameters
-    pub parameters: Value,
+    pub parameters: Parameters,
+}
+
+/// JSON schema parameters with metadata stripped
+#[derive(Serialize, Clone, Debug)]
+pub struct Parameters(Value);
+
+impl Parameters {
+    /// Create Parameters from a JsonSchema
+    pub fn from_schema(schema: schemars::Schema) -> Self {
+        let mut value = schema.to_value();
+
+        // Remove `$schema` and `title` fields from JSON schema
+        if let Some(obj) = value.as_object_mut() {
+            obj.remove("$schema");
+            obj.remove("title");
+        }
+
+        Self(value)
+    }
+
+    /// Create Parameters from a type implementing JsonSchema
+    pub fn from_type<T: JsonSchema>() -> Self {
+        Self::from_schema(schema_for!(T))
+    }
 }
 
 #[cfg(test)]
@@ -187,7 +212,7 @@ mod tests {
             function: ToolFunction {
                 name: "test".into(),
                 description: "desc".into(),
-                parameters: serde_json::json!({"type": "object"}),
+                parameters: Parameters::from_schema(schema_for!(String)),
             },
         };
         let json = serde_json::to_string(&td).unwrap();

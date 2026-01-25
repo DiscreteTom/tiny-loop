@@ -1,24 +1,14 @@
 mod closure;
 mod web;
 
-use crate::types::{Message, ToolCall, ToolDefinition, ToolFunction};
+use crate::types::{Message, Parameters, ToolCall, ToolDefinition, ToolFunction};
 use async_trait::async_trait;
 use futures::future::join_all;
-use schemars::{JsonSchema, schema_for};
+use schemars::JsonSchema;
 use serde::Deserialize;
-use serde_json::Value;
 
 pub use closure::*;
 pub use web::*;
-
-/// Remove `$schema` and `title` fields from JSON schema
-pub fn strip_schema_metadata(mut value: Value) -> Value {
-    if let Some(obj) = value.as_object_mut() {
-        obj.remove("$schema");
-        obj.remove("title");
-    }
-    value
-}
 
 pub trait FnToolArgs: JsonSchema + for<'a> Deserialize<'a> {
     const TOOL_NAME: &'static str;
@@ -30,7 +20,7 @@ pub trait FnToolArgs: JsonSchema + for<'a> Deserialize<'a> {
             function: ToolFunction {
                 name: Self::TOOL_NAME.to_string(),
                 description: Self::TOOL_DESCRIPTION.to_string(),
-                parameters: strip_schema_metadata(schema_for!(Self).to_value()),
+                parameters: Parameters::from_type::<Self>(),
             },
         }
     }
