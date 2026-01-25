@@ -8,6 +8,7 @@ use futures::future::join_all;
 
 pub(crate) use closure::*;
 pub use r#fn::*;
+pub use tiny_loop_macros::tool;
 pub use web::*;
 
 /// A trait for tools that can be called with JSON string arguments.
