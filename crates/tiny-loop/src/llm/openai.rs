@@ -1,4 +1,5 @@
 use crate::types::{Message, ToolDefinition};
+use async_trait::async_trait;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
 
@@ -93,6 +94,7 @@ impl OpenAIProvider {
     }
 }
 
+#[async_trait]
 impl super::LLMProvider for OpenAIProvider {
     async fn call(
         &self,
