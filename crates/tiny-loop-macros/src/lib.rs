@@ -4,12 +4,11 @@ use crate::tool::tool_impl;
 use proc_macro::TokenStream;
 use quote::quote;
 
-/// Transforms a function into a tool with generated args struct and FnToolArgs implementation.
+/// Transforms a function into a tool with generated args struct and `FnToolArgs` implementation.
 ///
 /// # Example
 ///
-/// Input:
-/// ```rust
+/// ```ignore
 /// /// Fetch a URL.
 /// #[tool]
 /// pub async fn fetch(
@@ -20,8 +19,8 @@ use quote::quote;
 /// }
 /// ```
 ///
-/// Output:
-/// ```rust
+/// Will be transformed to:
+/// ```ignore
 /// /// Arguments for the `fetch` tool.
 /// #[derive(serde::Deserialize, schemars::JsonSchema)]
 /// pub struct FetchArgs {
