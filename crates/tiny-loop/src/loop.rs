@@ -25,6 +25,37 @@ impl TinyLoop {
         }
     }
 
+    /// Set messages
+    ///
+    /// # Example
+    /// ```
+    /// use tiny_loop::{TinyLoop, types::Message, llm::OpenAIProvider};
+    ///
+    /// let messages = vec![Message::User { content: "Hello".into() }];
+    /// let agent = TinyLoop::new(OpenAIProvider::new())
+    ///     .messages(messages);
+    /// ```
+    pub fn messages(mut self, messages: Vec<Message>) -> Self {
+        self.messages = messages;
+        self
+    }
+
+    /// Append a system message
+    ///
+    /// # Example
+    /// ```
+    /// use tiny_loop::{TinyLoop, llm::OpenAIProvider};
+    ///
+    /// let agent = TinyLoop::new(OpenAIProvider::new())
+    ///     .system("You are a helpful assistant");
+    /// ```
+    pub fn system(mut self, content: impl Into<String>) -> Self {
+        self.messages.push(Message::System {
+            content: content.into(),
+        });
+        self
+    }
+
     /// Set a custom tool executor (default: [`ParallelExecutor`])
     ///
     /// # Example
