@@ -53,11 +53,9 @@ pub trait Tool {
     async fn call_batch(&self, args: Vec<ToolCall>) -> Vec<Message> {
         join_all(
             args.into_iter()
-                .map(async |call| Message {
-                    role: "tool".into(),
-                    tool_call_id: Some(call.id),
-                    tool_calls: None,
-                    content: Some(self.call(call.function.arguments).await),
+                .map(async |call| Message::Tool {
+                    tool_call_id: call.id,
+                    content: self.call(call.function.arguments).await,
                 })
                 .collect::<Vec<_>>(),
         )

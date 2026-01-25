@@ -57,10 +57,17 @@ impl<P: LLMProvider> AgentLoop<P> {
 
             self.messages.push(message.clone());
 
-            if let Some(tool_calls) = message.tool_calls {
-                self.execute_tools(tool_calls).await;
-            } else {
-                return Ok(message.content.unwrap_or_default());
+            match message {
+                Message::Assistant {
+                    tool_calls: Some(calls),
+                    ..
+                } => {
+                    self.execute_tools(calls).await;
+                }
+                Message::Assistant { content, .. } => {
+                    return Ok(content);
+                }
+                _ => return Ok(String::new()),
             }
         }
     }
@@ -80,11 +87,9 @@ impl<P: LLMProvider> AgentLoop<P> {
                 None => futures::future::Either::Right(futures::future::ready(
                     calls
                         .into_iter()
-                        .map(|call| Message {
-                            role: "tool".into(),
-                            tool_call_id: Some(call.id),
-                            tool_calls: None,
-                            content: Some(format!("Tool '{}' not found", name)),
+                        .map(|call| Message::Tool {
+                            tool_call_id: call.id,
+                            content: format!("Tool '{}' not found", name),
                         })
                         .collect(),
                 )),
