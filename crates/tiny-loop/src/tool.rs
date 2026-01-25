@@ -6,7 +6,7 @@ use crate::types::{Message, ToolCall};
 use async_trait::async_trait;
 use futures::future::join_all;
 
-pub use closure::*;
+pub(crate) use closure::*;
 pub use r#fn::*;
 pub use web::*;
 
