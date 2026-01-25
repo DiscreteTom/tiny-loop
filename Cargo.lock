@@ -1535,6 +1535,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+ "tiny-loop-macros",
 ]
 
 [[package]]

@@ -3,14 +3,14 @@ use std::collections::HashMap;
 use super::types::{Message, ToolCall};
 use crate::{
     llm::LLMProvider,
-    tool::{CallableTool, Definition},
+    tool::{ClosureTool, FnToolArgs, Tool},
     types::ToolDefinition,
 };
 
 /// Agent loop that coordinates LLM calls and tool execution
 pub struct AgentLoop<P: LLMProvider> {
     provider: P,
-    tools: HashMap<String, Box<dyn CallableTool>>,
+    tools: HashMap<String, Box<dyn Tool + Sync>>,
     pub messages: Vec<Message>,
     definitions: Vec<ToolDefinition>,
 }
@@ -26,9 +26,24 @@ impl<P: LLMProvider> AgentLoop<P> {
         }
     }
 
-    pub fn tool<T: Definition + CallableTool + 'static>(mut self, tool: T) -> Self {
-        self.definitions.push(T::definition());
-        self.tools.insert(T::NAME.into(), Box::new(tool));
+    pub fn tool<Args, Fut>(mut self, tool: fn(Args) -> Fut) -> Self
+    where
+        Fut: Future<Output = String> + Send + 'static,
+        Args: FnToolArgs + 'static,
+    {
+        self.definitions.push(Args::definition());
+        self.tools.insert(
+            Args::TOOL_NAME.into(),
+            Box::new(ClosureTool::boxed(move |s: String| {
+                Box::pin(async move {
+                    let args = match serde_json::from_str::<Args>(&s) {
+                        Ok(args) => args,
+                        Err(e) => return e.to_string(),
+                    };
+                    tool(args).await
+                })
+            })),
+        );
         self
     }
 
@@ -80,5 +95,25 @@ impl<P: LLMProvider> AgentLoop<P> {
         for messages in results {
             self.messages.extend(messages);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::llm::openai::OpenAIProvider;
+    use tiny_loop_macros::tool_internal;
+
+    /// Fetch a URL.
+    #[tool_internal]
+    pub async fn fetch(
+        /// URL to fetch
+        url: String,
+    ) -> String {
+        todo!()
+    }
+
+    fn test() {
+        AgentLoop::new(OpenAIProvider::new()).tool(fetch);
     }
 }
