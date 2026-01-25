@@ -214,7 +214,15 @@ impl super::LLMProvider for OpenAIProvider {
             .send()
             .await?;
 
-        let chat_response: ChatResponse = response.json().await?;
+        let status = response.status();
+        let body = response.text().await?;
+
+        if !status.is_success() {
+            anyhow::bail!("API error ({}): {}", status, body);
+        }
+
+        let chat_response: ChatResponse = serde_json::from_str(&body)
+            .map_err(|e| anyhow::anyhow!("Failed to parse response: {}. Body: {}", e, body))?;
 
         Ok(chat_response.choices[0].message.clone())
     }
