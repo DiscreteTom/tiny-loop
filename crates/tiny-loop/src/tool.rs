@@ -1,30 +1,14 @@
 mod closure;
+mod r#fn;
 mod web;
 
-use crate::types::{Message, Parameters, ToolCall, ToolDefinition, ToolFunction};
+use crate::types::{Message, ToolCall};
 use async_trait::async_trait;
 use futures::future::join_all;
-use schemars::JsonSchema;
-use serde::Deserialize;
 
 pub use closure::*;
+pub use r#fn::*;
 pub use web::*;
-
-pub trait FnToolArgs: JsonSchema + for<'a> Deserialize<'a> {
-    const TOOL_NAME: &'static str;
-    const TOOL_DESCRIPTION: &'static str;
-
-    fn definition() -> ToolDefinition {
-        ToolDefinition {
-            tool_type: "function".to_string(),
-            function: ToolFunction {
-                name: Self::TOOL_NAME.to_string(),
-                description: Self::TOOL_DESCRIPTION.to_string(),
-                parameters: Parameters::from_type::<Self>(),
-            },
-        }
-    }
-}
 
 /// A trait for tools that can be called with JSON string arguments.
 ///
