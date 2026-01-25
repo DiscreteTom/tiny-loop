@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/tiny-loop", "crates/tiny-loop-macros"]
+resolver = "2"
