@@ -1,4 +1,5 @@
 mod closure;
+mod executor;
 mod r#fn;
 mod fs;
 mod utils;
@@ -9,6 +10,7 @@ use async_trait::async_trait;
 use futures::future::join_all;
 
 pub(crate) use closure::*;
+pub use executor::*;
 pub use r#fn::*;
 pub use fs::*;
 pub use tiny_loop_macros::tool;

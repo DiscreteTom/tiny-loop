@@ -1,0 +1,46 @@
+use std::collections::HashMap;
+
+use crate::{
+    tool::{Tool, executor::ToolExecutor},
+    types::{Message, ToolCall},
+};
+use async_trait::async_trait;
+
+/// Executes tools sequentially one by one by using [`Tool::call`]
+pub struct SequentialExecutor {
+    tools: HashMap<String, Box<dyn Tool + Sync>>,
+}
+
+impl SequentialExecutor {
+    pub fn new() -> Self {
+        Self {
+            tools: HashMap::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl ToolExecutor for SequentialExecutor {
+    fn add(&mut self, name: String, tool: Box<dyn Tool + Sync>) -> Option<Box<dyn Tool + Sync>> {
+        self.tools.insert(name, tool)
+    }
+
+    async fn execute(&self, calls: Vec<ToolCall>) -> Vec<Message> {
+        let mut results = Vec::new();
+        for call in calls {
+            let message = if let Some(tool) = self.tools.get(&call.function.name) {
+                Message::Tool {
+                    tool_call_id: call.id.clone(),
+                    content: tool.call(call.function.arguments).await,
+                }
+            } else {
+                Message::Tool {
+                    tool_call_id: call.id,
+                    content: format!("Tool '{}' not found", call.function.name),
+                }
+            };
+            results.push(message);
+        }
+        results
+    }
+}

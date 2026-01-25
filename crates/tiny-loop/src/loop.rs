@@ -1,18 +1,16 @@
-use std::collections::HashMap;
-
-use super::types::{Message, ToolCall};
+use super::types::Message;
 use crate::{
     llm::LLMProvider,
-    tool::{ClosureTool, FnToolArgs, Tool},
+    tool::{ClosureTool, FnToolArgs, ParallelExecutor, ToolExecutor},
     types::ToolDefinition,
 };
 
 /// Agent loop that coordinates LLM calls and tool execution
 pub struct AgentLoop<P: LLMProvider> {
     provider: P,
-    tools: HashMap<String, Box<dyn Tool + Sync>>,
+    executor: Box<dyn ToolExecutor>,
     pub messages: Vec<Message>,
-    definitions: Vec<ToolDefinition>,
+    tools: Vec<ToolDefinition>,
 }
 
 impl<P: LLMProvider> AgentLoop<P> {
@@ -21,8 +19,8 @@ impl<P: LLMProvider> AgentLoop<P> {
         Self {
             provider,
             messages: Vec::new(),
-            tools: HashMap::new(),
-            definitions: Vec::new(),
+            executor: Box::new(ParallelExecutor::new()),
+            tools: Vec::new(),
         }
     }
 
@@ -31,8 +29,8 @@ impl<P: LLMProvider> AgentLoop<P> {
         Fut: Future<Output = String> + Send + 'static,
         Args: FnToolArgs + 'static,
     {
-        self.definitions.push(Args::definition());
-        self.tools.insert(
+        self.tools.push(Args::definition());
+        self.executor.add(
             Args::TOOL_NAME.into(),
             Box::new(ClosureTool::boxed(move |s: String| {
                 Box::pin(async move {
@@ -50,10 +48,7 @@ impl<P: LLMProvider> AgentLoop<P> {
     /// Run the agent loop until completion
     pub async fn run(&mut self) -> anyhow::Result<String> {
         loop {
-            let message = self
-                .provider
-                .call(&self.messages, &self.definitions)
-                .await?;
+            let message = self.provider.call(&self.messages, &self.tools).await?;
 
             self.messages.push(message.clone());
 
@@ -62,43 +57,14 @@ impl<P: LLMProvider> AgentLoop<P> {
                     tool_calls: Some(calls),
                     ..
                 } => {
-                    self.execute_tools(calls).await;
+                    let results = self.executor.execute(calls).await;
+                    self.messages.extend(results);
                 }
                 Message::Assistant { content, .. } => {
                     return Ok(content);
                 }
                 _ => return Ok(String::new()),
             }
-        }
-    }
-
-    async fn execute_tools(&mut self, calls: Vec<ToolCall>) {
-        let mut grouped: HashMap<String, Vec<ToolCall>> = HashMap::new();
-        for call in calls {
-            grouped
-                .entry(call.function.name.clone())
-                .or_default()
-                .push(call);
-        }
-
-        let results = futures::future::join_all(grouped.into_iter().map(|(name, calls)| {
-            match self.tools.get(&name) {
-                Some(tool) => futures::future::Either::Left(tool.call_batch(calls)),
-                None => futures::future::Either::Right(futures::future::ready(
-                    calls
-                        .into_iter()
-                        .map(|call| Message::Tool {
-                            tool_call_id: call.id,
-                            content: format!("Tool '{}' not found", name),
-                        })
-                        .collect(),
-                )),
-            }
-        }))
-        .await;
-
-        for messages in results {
-            self.messages.extend(messages);
         }
     }
 }
