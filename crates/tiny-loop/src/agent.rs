@@ -1,7 +1,7 @@
 use super::types::Message;
 use crate::{
     llm::LLMProvider,
-    tool::{ClosureTool, FnToolArgs, ParallelExecutor, ToolExecutor},
+    tool::{ClosureTool, ParallelExecutor, ToolArgs, ToolExecutor},
     types::ToolDefinition,
 };
 
@@ -92,7 +92,7 @@ impl Agent {
     pub fn tool<Args, Fut>(mut self, tool: fn(Args) -> Fut) -> Self
     where
         Fut: Future<Output = String> + Send + 'static,
-        Args: FnToolArgs + 'static,
+        Args: ToolArgs + 'static,
     {
         self.tools.push(Args::definition());
         self.executor.add(
@@ -144,7 +144,7 @@ impl Agent {
     where
         T: Send + Sync + Clone + 'static,
         Fut: Future<Output = String> + Send + 'static,
-        Args: FnToolArgs + 'static,
+        Args: ToolArgs + 'static,
     {
         self.tools.push(Args::definition());
         self.executor.add(
