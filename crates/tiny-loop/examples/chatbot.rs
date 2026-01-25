@@ -9,7 +9,7 @@ async fn main() {
         OpenAIProvider::new()
             .api_key(api_key)
             .base_url("https://openrouter.ai/api/v1")
-            .model("google/gemini-flash-3-preview"),
+            .model("google/gemini-3-flash-preview"),
     )
     .system("You are a helpful assistant");
 
