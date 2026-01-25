@@ -5,11 +5,12 @@ use crate::{
     types::ToolDefinition,
 };
 
-/// Agent loop that coordinates LLM calls and tool execution
+/// Agent loop that coordinates LLM calls and tool execution.
+/// Uses [`ParallelExecutor`] by default.
 pub struct TinyLoop {
+    pub messages: Vec<Message>,
     llm: Box<dyn LLMProvider>,
     executor: Box<dyn ToolExecutor>,
-    pub messages: Vec<Message>,
     tools: Vec<ToolDefinition>,
 }
 
@@ -24,6 +25,21 @@ impl TinyLoop {
         }
     }
 
+    /// Set a custom tool executor (default: [`ParallelExecutor`])
+    ///
+    /// # Example
+    /// ```
+    /// use tiny_loop::{TinyLoop, tool::SequentialExecutor, llm::OpenAIProvider};
+    ///
+    /// let agent = TinyLoop::new(OpenAIProvider::new())
+    ///     .executor(SequentialExecutor::new());
+    /// ```
+    pub fn executor(mut self, executor: impl ToolExecutor + 'static) -> Self {
+        self.executor = Box::new(executor);
+        self
+    }
+
+    /// Register a tool function with the agent loop
     pub fn tool<Args, Fut>(mut self, tool: fn(Args) -> Fut) -> Self
     where
         Fut: Future<Output = String> + Send + 'static,
