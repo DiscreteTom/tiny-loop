@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial release of tiny-loop
-- `TinyLoop` agent loop for coordinating LLM calls and tool execution
+- `Agent` for coordinating LLM calls and tool execution
 - `#[tool]` macro for defining tools from async functions
 - `OpenAIProvider` for OpenAI-compatible API endpoints
 - Parallel and sequential tool execution strategies

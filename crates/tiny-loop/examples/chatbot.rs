@@ -1,7 +1,7 @@
 use std::io::{self, Write};
-use tiny_loop::{TinyLoop, llm::OpenAIProvider};
+use tiny_loop::{Agent, llm::OpenAIProvider};
 
-fn create_agent() -> TinyLoop {
+fn create_agent() -> Agent {
     let api_key = std::env::var("LLM_API_KEY").expect("LLM_API_KEY not set");
 
     let llm = OpenAIProvider::new()
@@ -9,7 +9,7 @@ fn create_agent() -> TinyLoop {
         .base_url("https://openrouter.ai/api/v1")
         .model("google/gemini-3-flash-preview");
 
-    TinyLoop::new(llm).system("You are a helpful assistant")
+    Agent::new(llm).system("You are a helpful assistant")
 }
 
 #[tokio::main]

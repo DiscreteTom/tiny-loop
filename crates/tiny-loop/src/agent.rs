@@ -7,14 +7,14 @@ use crate::{
 
 /// Agent loop that coordinates LLM calls and tool execution.
 /// Uses [`ParallelExecutor`] by default.
-pub struct TinyLoop {
+pub struct Agent {
     pub messages: Vec<Message>,
     llm: Box<dyn LLMProvider>,
     executor: Box<dyn ToolExecutor>,
     tools: Vec<ToolDefinition>,
 }
 
-impl TinyLoop {
+impl Agent {
     /// Create a new agent loop
     pub fn new(llm: impl LLMProvider + 'static) -> Self {
         Self {
@@ -29,10 +29,10 @@ impl TinyLoop {
     ///
     /// # Example
     /// ```
-    /// use tiny_loop::{TinyLoop, types::Message, llm::OpenAIProvider};
+    /// use tiny_loop::{Agent, types::Message, llm::OpenAIProvider};
     ///
     /// let messages = vec![Message::User { content: "Hello".into() }];
-    /// let agent = TinyLoop::new(OpenAIProvider::new())
+    /// let agent = Agent::new(OpenAIProvider::new())
     ///     .messages(messages);
     /// ```
     pub fn messages(mut self, messages: Vec<Message>) -> Self {
@@ -44,9 +44,9 @@ impl TinyLoop {
     ///
     /// # Example
     /// ```
-    /// use tiny_loop::{TinyLoop, llm::OpenAIProvider};
+    /// use tiny_loop::{Agent, llm::OpenAIProvider};
     ///
-    /// let agent = TinyLoop::new(OpenAIProvider::new())
+    /// let agent = Agent::new(OpenAIProvider::new())
     ///     .system("You are a helpful assistant");
     /// ```
     pub fn system(mut self, content: impl Into<String>) -> Self {
@@ -60,9 +60,9 @@ impl TinyLoop {
     ///
     /// # Example
     /// ```
-    /// use tiny_loop::{TinyLoop, tool::SequentialExecutor, llm::OpenAIProvider};
+    /// use tiny_loop::{Agent, tool::SequentialExecutor, llm::OpenAIProvider};
     ///
-    /// let agent = TinyLoop::new(OpenAIProvider::new())
+    /// let agent = Agent::new(OpenAIProvider::new())
     ///     .executor(SequentialExecutor::new());
     /// ```
     pub fn executor(mut self, executor: impl ToolExecutor + 'static) -> Self {
@@ -74,14 +74,14 @@ impl TinyLoop {
     ///
     /// # Example
     /// ```
-    /// use tiny_loop::{TinyLoop, tool::tool, llm::OpenAIProvider};
+    /// use tiny_loop::{Agent, tool::tool, llm::OpenAIProvider};
     ///
     /// #[tool]
     /// async fn fetch(url: String) -> String {
     ///     todo!()
     /// }
     ///
-    /// let agent = TinyLoop::new(OpenAIProvider::new())
+    /// let agent = Agent::new(OpenAIProvider::new())
     ///     .tool(fetch);
     /// ```
     pub fn tool<Args, Fut>(mut self, tool: fn(Args) -> Fut) -> Self
