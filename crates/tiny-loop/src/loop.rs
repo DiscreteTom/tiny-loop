@@ -39,7 +39,20 @@ impl TinyLoop {
         self
     }
 
-    /// Register a tool function with the agent loop
+    /// Register a tool created by [`#[tool]`](crate::tool::tool)
+    ///
+    /// # Example
+    /// ```
+    /// use tiny_loop::{TinyLoop, tool::tool, llm::OpenAIProvider};
+    ///
+    /// #[tool]
+    /// async fn fetch(url: String) -> String {
+    ///     todo!()
+    /// }
+    ///
+    /// let agent = TinyLoop::new(OpenAIProvider::new())
+    ///     .tool(fetch);
+    /// ```
     pub fn tool<Args, Fut>(mut self, tool: fn(Args) -> Fut) -> Self
     where
         Fut: Future<Output = String> + Send + 'static,
