@@ -138,23 +138,3 @@ impl TinyLoop {
         self.run().await
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::llm::OpenAIProvider;
-    use tiny_loop_macros::tool_internal;
-
-    /// Fetch a URL.
-    #[tool_internal]
-    pub async fn fetch(
-        /// URL to fetch
-        url: String,
-    ) -> String {
-        todo!()
-    }
-
-    fn test() {
-        TinyLoop::new(OpenAIProvider::new()).tool(fetch);
-    }
-}
