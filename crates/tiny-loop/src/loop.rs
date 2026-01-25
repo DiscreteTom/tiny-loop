@@ -74,7 +74,8 @@ impl TinyLoop {
         self
     }
 
-    /// Run the agent loop until completion
+    /// Run the agent loop until completion.
+    /// Return the last AI's response
     pub async fn run(&mut self) -> anyhow::Result<String> {
         loop {
             let message = self.llm.call(&self.messages, &self.tools).await?;
@@ -95,6 +96,15 @@ impl TinyLoop {
                 _ => return Ok(String::new()),
             }
         }
+    }
+
+    /// Run the agent loop with a new user input appended.
+    /// Return the last AI's response
+    pub async fn chat(&mut self, prompt: impl Into<String>) -> anyhow::Result<String> {
+        self.messages.push(Message::User {
+            content: prompt.into(),
+        });
+        self.run().await
     }
 }
 
