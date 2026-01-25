@@ -70,14 +70,19 @@ impl Agent {
         self
     }
 
-    /// Register a tool created by [`#[tool]`](crate::tool::tool)
+    /// Register a tool function created by [`#[tool]`](crate::tool::tool)
+    ///
+    /// To register a tool method with an instance, use [`bind`](Self::bind).
     ///
     /// # Example
     /// ```
     /// use tiny_loop::{Agent, tool::tool, llm::OpenAIProvider};
     ///
     /// #[tool]
-    /// async fn fetch(url: String) -> String {
+    /// async fn fetch(
+    ///     /// URL to fetch
+    ///     url: String,
+    /// ) -> String {
     ///     todo!()
     /// }
     ///
@@ -99,6 +104,59 @@ impl Agent {
                         Err(e) => return e.to_string(),
                     };
                     tool(args).await
+                })
+            })),
+        );
+        self
+    }
+
+    /// Bind an instance to a tool method created by [`#[tool]`](crate::tool::tool)
+    ///
+    /// To register a standalone tool function, use [`tool`](Self::tool).
+    ///
+    /// # Example
+    /// ```
+    /// use tiny_loop::{Agent, tool::tool, llm::OpenAIProvider};
+    /// use std::sync::Arc;
+    ///
+    /// #[derive(Clone)]
+    /// struct Database {
+    ///     data: Arc<String>,
+    /// }
+    ///
+    /// #[tool]
+    /// impl Database {
+    ///     /// Fetch data from database
+    ///     async fn fetch(
+    ///         self,
+    ///         /// Data key
+    ///         key: String,
+    ///     ) -> String {
+    ///         todo!()
+    ///     }
+    /// }
+    ///
+    /// let db = Database { data: Arc::new("data".into()) };
+    /// let agent = Agent::new(OpenAIProvider::new())
+    ///     .bind(db, Database::fetch);
+    /// ```
+    pub fn bind<T, Args, Fut>(mut self, ins: T, tool: fn(T, Args) -> Fut) -> Self
+    where
+        T: Send + Sync + Clone + 'static,
+        Fut: Future<Output = String> + Send + 'static,
+        Args: FnToolArgs + 'static,
+    {
+        self.tools.push(Args::definition());
+        self.executor.add(
+            Args::TOOL_NAME.into(),
+            Box::new(ClosureTool::boxed(move |s: String| {
+                let ins = ins.clone();
+                Box::pin(async move {
+                    let args = match serde_json::from_str::<Args>(&s) {
+                        Ok(args) => args,
+                        Err(e) => return e.to_string(),
+                    };
+                    tool(ins, args).await
                 })
             })),
         );
