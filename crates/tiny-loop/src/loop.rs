@@ -6,14 +6,14 @@ use crate::{
 };
 
 /// Agent loop that coordinates LLM calls and tool execution
-pub struct AgentLoop {
+pub struct TinyLoop {
     llm: Box<dyn LLMProvider>,
     executor: Box<dyn ToolExecutor>,
     pub messages: Vec<Message>,
     tools: Vec<ToolDefinition>,
 }
 
-impl AgentLoop {
+impl TinyLoop {
     /// Create a new agent loop
     pub fn new(llm: impl LLMProvider + 'static) -> Self {
         Self {
@@ -85,6 +85,6 @@ mod tests {
     }
 
     fn test() {
-        AgentLoop::new(OpenAIProvider::new()).tool(fetch);
+        TinyLoop::new(OpenAIProvider::new()).tool(fetch);
     }
 }
