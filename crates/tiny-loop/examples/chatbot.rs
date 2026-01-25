@@ -1,17 +1,20 @@
 use std::io::{self, Write};
 use tiny_loop::{TinyLoop, llm::OpenAIProvider};
 
-#[tokio::main]
-async fn main() {
+fn create_agent() -> TinyLoop {
     let api_key = std::env::var("LLM_API_KEY").expect("LLM_API_KEY not set");
 
-    let mut agent = TinyLoop::new(
-        OpenAIProvider::new()
-            .api_key(api_key)
-            .base_url("https://openrouter.ai/api/v1")
-            .model("google/gemini-3-flash-preview"),
-    )
-    .system("You are a helpful assistant");
+    let llm = OpenAIProvider::new()
+        .api_key(api_key)
+        .base_url("https://openrouter.ai/api/v1")
+        .model("google/gemini-3-flash-preview");
+
+    TinyLoop::new(llm).system("You are a helpful assistant")
+}
+
+#[tokio::main]
+async fn main() {
+    let mut agent = create_agent();
 
     println!("Chatbot started. Type 'quit' to exit.\n");
 
