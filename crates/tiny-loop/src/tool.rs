@@ -1,5 +1,7 @@
 mod closure;
 mod r#fn;
+mod fs;
+mod utils;
 mod web;
 
 use crate::types::{Message, ToolCall};
@@ -8,6 +10,7 @@ use futures::future::join_all;
 
 pub(crate) use closure::*;
 pub use r#fn::*;
+pub use fs::*;
 pub use tiny_loop_macros::tool;
 pub use web::*;
 

@@ -1,5 +1,7 @@
 use tiny_loop_macros::tool_internal;
 
+use super::utils::truncate_text;
+
 /// Fetch a webpage and convert HTML to Markdown
 #[tool_internal]
 pub async fn fetch(
@@ -21,19 +23,5 @@ pub async fn fetch(
     };
 
     let markdown = html2md::parse_html(&html);
-    let start_idx = start.unwrap_or(0);
-    let end_idx = end.unwrap_or(5000).min(markdown.len());
-    let total_len = markdown.len();
-
-    let mut result: String = markdown
-        .chars()
-        .skip(start_idx)
-        .take(end_idx.saturating_sub(start_idx))
-        .collect();
-
-    if end_idx < total_len {
-        result.push_str(&format!("\n---\ntruncated [{}/{}]", end_idx, total_len));
-    }
-
-    result
+    truncate_text(markdown, start.unwrap_or(0), end.unwrap_or(5000))
 }
