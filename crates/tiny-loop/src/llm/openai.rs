@@ -83,6 +83,10 @@ pub struct OpenAIProvider {
     max_tokens: Option<u32>,
     /// Additional HTTP headers
     custom_headers: HeaderMap,
+    /// Maximum number of retries on failure
+    max_retries: u32,
+    /// Delay between retries in milliseconds
+    retry_delay_ms: u64,
 }
 
 impl Default for OpenAIProvider {
@@ -110,6 +114,8 @@ impl OpenAIProvider {
             temperature: None,
             max_tokens: None,
             custom_headers: HeaderMap::new(),
+            max_retries: 3,
+            retry_delay_ms: 1000,
         }
     }
 
@@ -209,6 +215,36 @@ impl OpenAIProvider {
         );
         self
     }
+
+    /// Set maximum number of retries on failure (default: 3)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiny_loop::llm::OpenAIProvider;
+    ///
+    /// let provider = OpenAIProvider::new()
+    ///     .max_retries(5);
+    /// ```
+    pub fn max_retries(mut self, retries: u32) -> Self {
+        self.max_retries = retries;
+        self
+    }
+
+    /// Set delay between retries in milliseconds (default: 1000)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiny_loop::llm::OpenAIProvider;
+    ///
+    /// let provider = OpenAIProvider::new()
+    ///     .retry_delay(2000);
+    /// ```
+    pub fn retry_delay(mut self, delay_ms: u64) -> Self {
+        self.retry_delay_ms = delay_ms;
+        self
+    }
 }
 
 #[async_trait]
@@ -217,16 +253,47 @@ impl super::LLMProvider for OpenAIProvider {
         &self,
         messages: &[Message],
         tools: &[ToolDefinition],
+        mut stream_callback: Option<&mut super::StreamCallback>,
+    ) -> anyhow::Result<Message> {
+        let mut attempt = 0;
+        loop {
+            attempt += 1;
+            tracing::debug!(
+                model = %self.model,
+                messages = messages.len(),
+                tools = tools.len(),
+                streaming = stream_callback.is_some(),
+                attempt = attempt,
+                max_retries = self.max_retries,
+                "Calling LLM API"
+            );
+
+            match self
+                .call_once(messages, tools, stream_callback.as_deref_mut())
+                .await
+            {
+                Ok(message) => return Ok(message),
+                Err(e) if attempt > self.max_retries => {
+                    tracing::debug!("Max retries exceeded");
+                    return Err(e);
+                }
+                Err(e) => {
+                    tracing::debug!("API call failed, retrying: {}", e);
+                    tokio::time::sleep(tokio::time::Duration::from_millis(self.retry_delay_ms))
+                        .await;
+                }
+            }
+        }
+    }
+}
+
+impl OpenAIProvider {
+    async fn call_once(
+        &self,
+        messages: &[Message],
+        tools: &[ToolDefinition],
         stream_callback: Option<&mut super::StreamCallback>,
     ) -> anyhow::Result<Message> {
-        tracing::debug!(
-            model = %self.model,
-            messages = messages.len(),
-            tools = tools.len(),
-            streaming = stream_callback.is_some(),
-            "Calling LLM API"
-        );
-
         let request = ChatRequest {
             model: self.model.clone(),
             messages: messages.to_vec(),
@@ -269,9 +336,7 @@ impl super::LLMProvider for OpenAIProvider {
             Ok(chat_response.choices[0].message.clone())
         }
     }
-}
 
-impl OpenAIProvider {
     async fn handle_stream(
         &self,
         response: reqwest::Response,
