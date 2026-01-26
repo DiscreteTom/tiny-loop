@@ -47,6 +47,10 @@ struct StreamChoice {
 struct Delta {
     #[serde(default)]
     content: Option<String>,
+    #[serde(default)]
+    tool_calls: Option<Vec<crate::types::ToolCall>>,
+    #[serde(default)]
+    finish_reason: Option<String>,
 }
 
 /// Single completion choice from the API response
@@ -347,6 +351,7 @@ impl OpenAIProvider {
         let mut stream = response.bytes_stream();
         let mut buffer = String::new();
         let mut content = String::new();
+        let mut tool_calls = Vec::new();
 
         while let Some(chunk) = stream.try_next().await? {
             buffer.push_str(&String::from_utf8_lossy(&chunk));
@@ -361,11 +366,15 @@ impl OpenAIProvider {
                     }
 
                     if let Ok(chunk) = serde_json::from_str::<StreamChunk>(data) {
-                        if let Some(delta_content) =
-                            chunk.choices.first().and_then(|c| c.delta.content.as_ref())
-                        {
-                            content.push_str(delta_content);
-                            callback(delta_content.clone());
+                        if let Some(choice) = chunk.choices.first() {
+                            if let Some(delta_content) = &choice.delta.content {
+                                content.push_str(delta_content);
+                                callback(delta_content.clone());
+                            }
+
+                            if let Some(delta_tool_calls) = &choice.delta.tool_calls {
+                                tool_calls.extend(delta_tool_calls.clone());
+                            }
                         }
                     }
                 }
@@ -375,7 +384,11 @@ impl OpenAIProvider {
         tracing::debug!("Streaming completed, total length: {}", content.len());
         Ok(Message::Assistant {
             content,
-            tool_calls: None,
+            tool_calls: if tool_calls.is_empty() {
+                None
+            } else {
+                Some(tool_calls)
+            },
         })
     }
 }
