@@ -91,7 +91,8 @@ impl Agent {
 
     /// Register a tool function created by [`#[tool]`](crate::tool::tool)
     ///
-    /// To register a tool method with an instance, use [`bind`](Self::bind).
+    /// To register a tool method with an instance, use [`Self::bind`].
+    /// To register external tools (e.g. from MCP servers) use [`Self::external`]
     ///
     /// # Example
     /// ```
@@ -131,7 +132,8 @@ impl Agent {
 
     /// Bind an instance to a tool method created by [`#[tool]`](crate::tool::tool)
     ///
-    /// To register a standalone tool function, use [`tool`](Self::tool).
+    /// To register a standalone tool function, use [`Self::tool`].
+    /// To register external tools (e.g. from MCP servers) use [`Self::external`]
     ///
     /// # Example
     /// ```
@@ -179,6 +181,59 @@ impl Agent {
                 })
             })),
         );
+        self
+    }
+
+    /// Register external tools (e.g. from MCP servers)
+    ///
+    /// To register a standalone tool function, use [`tool`](Self::tool).
+    /// To register a tool method with an instance, use [`bind`](Self::bind).
+    ///
+    /// # Example
+    /// ```
+    /// use tiny_loop::{Agent, llm::OpenAIProvider, types::{Parameters, ToolDefinition, ToolFunction}};
+    /// use serde_json::Value;
+    ///
+    /// let defs = vec![ToolDefinition {
+    ///     tool_type: "function".into(),
+    ///     function: ToolFunction {
+    ///         name: "name".into(),
+    ///         description: "description".into(),
+    ///         parameters: Parameters::from_object(t.input_schema.as_ref().clone()),
+    ///     },
+    /// }];
+    ///
+    /// let external_executor = move |name: String, args: String| {
+    ///     async move {
+    ///         let _args = serde_json::from_str::<Value>(&args).unwrap();
+    ///         "result".into()
+    ///     }
+    /// };
+    ///
+    /// let agent = Agent::new(OpenAIProvider::new())
+    ///     .external(defs, external_executor);
+    /// ```
+    pub fn external<Fut>(
+        mut self,
+        defs: Vec<ToolDefinition>,
+        exec: impl Fn(String, String) -> Fut + Clone + Send + Sync + 'static,
+    ) -> Self
+    where
+        Fut: Future<Output = String> + Send + 'static,
+    {
+        for d in &defs {
+            let name = d.function.name.clone();
+            let exec = exec.clone();
+            self.executor.add(
+                name.clone(),
+                Box::new(ClosureTool::boxed(move |s: String| {
+                    let name = name.clone();
+                    let exec = exec.clone();
+                    Box::pin(async move { exec(name.clone(), s).await })
+                })),
+            );
+        }
+        self.tools.extend(defs);
         self
     }
 

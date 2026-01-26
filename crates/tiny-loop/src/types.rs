@@ -1,6 +1,6 @@
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 /// LLM message with role-specific fields
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -86,20 +86,22 @@ pub struct ToolFunction {
 
 /// JSON schema parameters with metadata stripped
 #[derive(Serialize, Clone, Debug)]
-pub struct Parameters(Value);
+pub struct Parameters(Map<String, Value>);
 
 impl Parameters {
+    /// Create Parameters from a Json object (map)
+    pub fn from_object(mut obj: Map<String, Value>) -> Self {
+        // Remove `$schema` and `title` fields from JSON schema
+        obj.remove("$schema");
+        obj.remove("title");
+
+        Self(obj)
+    }
+
     /// Create Parameters from a JsonSchema
     pub fn from_schema(schema: schemars::Schema) -> Self {
-        let mut value = schema.to_value();
-
-        // Remove `$schema` and `title` fields from JSON schema
-        if let Some(obj) = value.as_object_mut() {
-            obj.remove("$schema");
-            obj.remove("title");
-        }
-
-        Self(value)
+        let obj = schema.to_value().as_object().unwrap().clone();
+        Self::from_object(obj)
     }
 
     /// Create Parameters from a type implementing JsonSchema
