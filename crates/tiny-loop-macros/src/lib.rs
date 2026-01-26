@@ -6,8 +6,55 @@ use quote::quote;
 
 /// Transforms a function or method into a tool with generated args struct and `ToolArgs` implementation.
 ///
-/// # Example (Function)
+/// # Usage
 ///
+/// ## Transform a Function
+///
+/// ```ignore
+/// use tiny_loop::{Agent, tool::tool, llm::OpenAIProvider};
+///
+/// #[tool]
+/// async fn get_weather(
+///     /// City name
+///     city: String,
+/// ) -> String {
+///     format!("Weather in {}: Sunny", city)
+/// }
+///
+/// let agent = Agent::new(OpenAIProvider::new())
+///     .tool(get_weather);
+/// ```
+///
+/// ## Transform Methods
+///
+/// For methods, use `.bind()`:
+///
+/// ```ignore
+/// #[derive(Clone)]
+/// struct Database;
+///
+/// #[tool]
+/// impl Database {
+///     /// Query the database
+///     async fn query(
+///         self,
+///         /// SQL query
+///         sql: String,
+///     ) -> String {
+///         format!("Results for: {}", sql)
+///     }
+/// }
+///
+/// let db = Database;
+/// let agent = Agent::new(OpenAIProvider::new())
+///     .bind(db, Database::query);
+/// ```
+///
+/// # Macro Expansion
+///
+/// ## Transform a Function
+///
+/// Input function:
 /// ```ignore
 /// /// Fetch a URL.
 /// #[tool]
@@ -19,7 +66,7 @@ use quote::quote;
 /// }
 /// ```
 ///
-/// Will be transformed to:
+/// Expands to:
 /// ```ignore
 /// /// Arguments for the `fetch` tool.
 /// #[derive(serde::Deserialize, schemars::JsonSchema)]
@@ -40,40 +87,41 @@ use quote::quote;
 /// }
 /// ```
 ///
-/// # Example (Method)
+/// ## Transform Methods
 ///
+/// Input method:
 /// ```ignore
-/// impl ReadonlyTool {
-///     /// Fetch data from database
+/// impl Database {
+///     /// Query database
 ///     #[tool]
-///     pub async fn fetch(
+///     pub async fn query(
 ///         self,
-///         /// Data key
-///         key: String,
+///         /// SQL query
+///         sql: String,
 ///     ) -> String {
 ///         todo!()
 ///     }
 /// }
 /// ```
 ///
-/// Will be transformed to:
+/// Expands to:
 /// ```ignore
-/// /// Arguments for the `fetch` tool.
+/// /// Arguments for the `query` tool.
 /// #[derive(serde::Deserialize, schemars::JsonSchema)]
-/// pub struct FetchArgs {
-///     /// Data key
-///     pub key: String,
+/// pub struct QueryArgs {
+///     /// SQL query
+///     pub sql: String,
 /// }
 ///
-/// impl tiny_loop::tool::ToolArgs for FetchArgs {
-///     const TOOL_NAME: &'static str = "fetch";
-///     const TOOL_DESCRIPTION: &'static str = "Fetch data from database";
+/// impl tiny_loop::tool::ToolArgs for QueryArgs {
+///     const TOOL_NAME: &'static str = "query";
+///     const TOOL_DESCRIPTION: &'static str = "Query database";
 /// }
 ///
-/// impl ReadonlyTool {
-///     /// Fetch data from database
-///     pub async fn fetch(self, args: FetchArgs) -> String {
-///         let FetchArgs { key } = args;
+/// impl Database {
+///     /// Query database
+///     pub async fn query(self, args: QueryArgs) -> String {
+///         let QueryArgs { sql } = args;
 ///         todo!()
 ///     }
 /// }
