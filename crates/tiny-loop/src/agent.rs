@@ -166,7 +166,9 @@ impl Agent {
     /// Run the agent loop until completion.
     /// Return the last AI's response
     pub async fn run(&mut self) -> anyhow::Result<String> {
+        tracing::debug!("Starting agent loop");
         loop {
+            tracing::trace!("Calling LLM with {} messages", self.history.get_all().len());
             let message = self.llm.call(self.history.get_all(), &self.tools).await?;
 
             self.history.add(message.clone());
@@ -176,10 +178,12 @@ impl Agent {
                     tool_calls: Some(calls),
                     ..
                 } => {
+                    tracing::debug!("Executing {} tool calls", calls.len());
                     let results = self.executor.execute(calls).await;
                     self.history.add_batch(results);
                 }
                 Message::Assistant { content, .. } => {
+                    tracing::debug!("Agent loop completed, response length: {}", content.len());
                     return Ok(content);
                 }
                 _ => return Ok(String::new()),
@@ -190,9 +194,9 @@ impl Agent {
     /// Run the agent loop with a new user input appended.
     /// Return the last AI's response
     pub async fn chat(&mut self, prompt: impl Into<String>) -> anyhow::Result<String> {
-        self.history.add(Message::User {
-            content: prompt.into(),
-        });
+        let prompt = prompt.into();
+        tracing::debug!("Chat request, prompt length: {}", prompt.len());
+        self.history.add(Message::User { content: prompt });
         self.run().await
     }
 }

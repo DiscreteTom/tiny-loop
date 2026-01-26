@@ -196,6 +196,13 @@ impl super::LLMProvider for OpenAIProvider {
         messages: &[Message],
         tools: &[ToolDefinition],
     ) -> anyhow::Result<Message> {
+        tracing::debug!(
+            model = %self.model,
+            messages = messages.len(),
+            tools = tools.len(),
+            "Calling LLM API"
+        );
+
         let request = ChatRequest {
             model: self.model.clone(),
             messages: messages.to_vec(),
@@ -215,15 +222,18 @@ impl super::LLMProvider for OpenAIProvider {
             .await?;
 
         let status = response.status();
+        tracing::trace!("LLM API response status: {}", status);
         let body = response.text().await?;
 
         if !status.is_success() {
+            tracing::debug!("LLM API error: status={}, body={}", status, body);
             anyhow::bail!("API error ({}): {}", status, body);
         }
 
         let chat_response: ChatResponse = serde_json::from_str(&body)
             .map_err(|e| anyhow::anyhow!("Failed to parse response: {}. Body: {}", e, body))?;
 
+        tracing::debug!("LLM API call completed successfully");
         Ok(chat_response.choices[0].message.clone())
     }
 }
