@@ -49,8 +49,6 @@ struct Delta {
     content: Option<String>,
     #[serde(default)]
     tool_calls: Option<Vec<crate::types::ToolCall>>,
-    #[serde(default)]
-    finish_reason: Option<String>,
 }
 
 /// Single completion choice from the API response
