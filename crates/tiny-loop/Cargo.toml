@@ -6,6 +6,7 @@ authors = ["DiscreteTom"]
 license = "MIT"
 description = "Minimal AI agent framework"
 repository = "https://github.com/DiscreteTom/tiny-loop"
+readme = "../../README.md"
 keywords = ["ai", "agent", "llm", "openai"]
 categories = ["api-bindings", "asynchronous"]
 

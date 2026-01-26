@@ -6,6 +6,7 @@ authors = ["DiscreteTom"]
 license = "MIT"
 description = "Procedural macros for tiny-loop"
 repository = "https://github.com/DiscreteTom/tiny-loop"
+readme = "README.md"
 keywords = ["ai", "agent", "llm", "macro"]
 categories = ["development-tools"]
 

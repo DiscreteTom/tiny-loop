@@ -1,15 +1,18 @@
 # tiny-loop
 
+![Crates.io Version](https://img.shields.io/crates/v/tiny-loop)
+![GitHub License](https://img.shields.io/github/license/DiscreteTom/tiny-loop)
+
 Minimal AI agent framework in Rust.
 
 ## Features
 
-- `#[tool]` macro for [functions](./crates/tiny-loop/examples/fn_tools.rs) and [methods](./crates/tiny-loop/examples/bind_tools.rs) to create custom tools.
+- [`#[tool]`](https://docs.rs/tiny-loop/latest/tiny_loop/tool/attr.tool.html) macro for [functions](./crates/tiny-loop/examples/fn_tools.rs) and [methods](./crates/tiny-loop/examples/bind_tools.rs) to create custom tools.
 - [Register MCP tools](./crates/tiny-loop/examples/mcp.rs)
 - [History management](./crates/tiny-loop/examples/history.rs)
 - [Streaming](./crates/tiny-loop/examples/common/streaming_cli.rs)
 - Parallel tool execution
-- Observability via `tracing`
+- Observability via [`tracing`](https://docs.rs/tracing/latest/tracing/)
 
 ## Installation
 
