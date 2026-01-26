@@ -18,6 +18,9 @@ struct ChatRequest {
     /// Maximum tokens to generate
     #[serde(skip_serializing_if = "Option::is_none")]
     max_tokens: Option<u32>,
+    /// Enable streaming
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stream: Option<bool>,
 }
 
 /// Response from OpenAI chat completions API
@@ -25,6 +28,25 @@ struct ChatRequest {
 struct ChatResponse {
     /// List of completion choices
     choices: Vec<Choice>,
+}
+
+/// Streaming response chunk
+#[derive(Deserialize)]
+struct StreamChunk {
+    choices: Vec<StreamChoice>,
+}
+
+/// Streaming choice
+#[derive(Deserialize)]
+struct StreamChoice {
+    delta: Delta,
+}
+
+/// Delta content in streaming
+#[derive(Deserialize)]
+struct Delta {
+    #[serde(default)]
+    content: Option<String>,
 }
 
 /// Single completion choice from the API response
@@ -195,11 +217,13 @@ impl super::LLMProvider for OpenAIProvider {
         &self,
         messages: &[Message],
         tools: &[ToolDefinition],
+        stream_callback: Option<&mut super::StreamCallback>,
     ) -> anyhow::Result<Message> {
         tracing::debug!(
             model = %self.model,
             messages = messages.len(),
             tools = tools.len(),
+            streaming = stream_callback.is_some(),
             "Calling LLM API"
         );
 
@@ -209,6 +233,11 @@ impl super::LLMProvider for OpenAIProvider {
             tools: tools.to_vec(),
             temperature: self.temperature,
             max_tokens: self.max_tokens,
+            stream: if stream_callback.is_some() {
+                Some(true)
+            } else {
+                None
+            },
         };
 
         let response = self
@@ -223,17 +252,65 @@ impl super::LLMProvider for OpenAIProvider {
 
         let status = response.status();
         tracing::trace!("LLM API response status: {}", status);
-        let body = response.text().await?;
 
         if !status.is_success() {
+            let body = response.text().await?;
             tracing::debug!("LLM API error: status={}, body={}", status, body);
             anyhow::bail!("API error ({}): {}", status, body);
         }
 
-        let chat_response: ChatResponse = serde_json::from_str(&body)
-            .map_err(|e| anyhow::anyhow!("Failed to parse response: {}. Body: {}", e, body))?;
+        if let Some(callback) = stream_callback {
+            self.handle_stream(response, callback).await
+        } else {
+            let body = response.text().await?;
+            let chat_response: ChatResponse = serde_json::from_str(&body)
+                .map_err(|e| anyhow::anyhow!("Failed to parse response: {}. Body: {}", e, body))?;
+            tracing::debug!("LLM API call completed successfully");
+            Ok(chat_response.choices[0].message.clone())
+        }
+    }
+}
 
-        tracing::debug!("LLM API call completed successfully");
-        Ok(chat_response.choices[0].message.clone())
+impl OpenAIProvider {
+    async fn handle_stream(
+        &self,
+        response: reqwest::Response,
+        callback: &mut super::StreamCallback,
+    ) -> anyhow::Result<Message> {
+        use futures::TryStreamExt;
+
+        let mut stream = response.bytes_stream();
+        let mut buffer = String::new();
+        let mut content = String::new();
+
+        while let Some(chunk) = stream.try_next().await? {
+            buffer.push_str(&String::from_utf8_lossy(&chunk));
+
+            while let Some(line_end) = buffer.find('\n') {
+                let line = buffer[..line_end].trim().to_string();
+                buffer.drain(..=line_end);
+
+                if let Some(data) = line.strip_prefix("data: ") {
+                    if data == "[DONE]" {
+                        break;
+                    }
+
+                    if let Ok(chunk) = serde_json::from_str::<StreamChunk>(data) {
+                        if let Some(delta_content) =
+                            chunk.choices.first().and_then(|c| c.delta.content.as_ref())
+                        {
+                            content.push_str(delta_content);
+                            callback(delta_content.clone());
+                        }
+                    }
+                }
+            }
+        }
+
+        tracing::debug!("Streaming completed, total length: {}", content.len());
+        Ok(Message::Assistant {
+            content,
+            tool_calls: None,
+        })
     }
 }

@@ -1,7 +1,7 @@
 use super::types::Message;
 use crate::{
     history::{History, InfiniteHistory},
-    llm::LLMProvider,
+    llm::{LLMProvider, StreamCallback},
     tool::{ClosureTool, ParallelExecutor, ToolArgs, ToolExecutor},
     types::ToolDefinition,
 };
@@ -13,6 +13,7 @@ pub struct Agent {
     llm: Box<dyn LLMProvider>,
     executor: Box<dyn ToolExecutor>,
     tools: Vec<ToolDefinition>,
+    stream_callback: Option<StreamCallback>,
 }
 
 impl Agent {
@@ -23,7 +24,25 @@ impl Agent {
             history: Box::new(InfiniteHistory::new()),
             executor: Box::new(ParallelExecutor::new()),
             tools: Vec::new(),
+            stream_callback: None,
         }
+    }
+
+    /// Set stream callback for LLM responses
+    ///
+    /// # Example
+    /// ```
+    /// use tiny_loop::{Agent, llm::OpenAIProvider};
+    ///
+    /// let agent = Agent::new(OpenAIProvider::new())
+    ///     .stream_callback(|chunk| print!("{}", chunk));
+    /// ```
+    pub fn stream_callback<F>(mut self, callback: F) -> Self
+    where
+        F: FnMut(String) + Send + 'static,
+    {
+        self.stream_callback = Some(Box::new(callback));
+        self
     }
 
     /// Set custom history manager (default: [`InfiniteHistory`])
@@ -169,7 +188,14 @@ impl Agent {
         tracing::debug!("Starting agent loop");
         loop {
             tracing::trace!("Calling LLM with {} messages", self.history.get_all().len());
-            let message = self.llm.call(self.history.get_all(), &self.tools).await?;
+            let message = self
+                .llm
+                .call(
+                    self.history.get_all(),
+                    &self.tools,
+                    self.stream_callback.as_mut(),
+                )
+                .await?;
 
             self.history.add(message.clone());
 
