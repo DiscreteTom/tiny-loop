@@ -7,13 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-01-26
+
 ### Added
 
-- Initial release of tiny-loop
-- `Agent` for coordinating LLM calls and tool execution
-- `#[tool]` macro for defining tools from async functions
-- `OpenAIProvider` for OpenAI-compatible API endpoints
-- Parallel and sequential tool execution strategies
+- Initial release
+- `#[tool]` macro to create custom tools
+- `Agent::bind` and `Agent::tool` to load custom tools
+- MCP tools support via `Agent::external`
+- Streaming support for LLM responses
+- History management system
+- Parallel tool execution
+- Retry strategy for OpenAI provider
+- Tracing instrumentation
 - Built-in tools: `fetch` and `read`
 
 [Unreleased]: https://github.com/DiscreteTom/tiny-loop/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/DiscreteTom/tiny-loop/releases/tag/v0.1.0
