@@ -2,9 +2,15 @@
 name = "tiny-loop"
 version = "0.1.0"
 edition = "2024"
+authors = ["DiscreteTom"]
+license = "MIT"
+description = "Minimal AI agent framework"
+repository = "https://github.com/DiscreteTom/tiny-loop"
+keywords = ["ai", "agent", "llm", "openai"]
+categories = ["api-bindings", "asynchronous"]
 
 [dependencies]
-tiny-loop-macros = { path = "../tiny-loop-macros" }
+tiny-loop-macros = { version = "0.1.0", path = "../tiny-loop-macros" }
 anyhow = "1"
 schemars = "1.2.0"
 serde = { version = "1.0.228", features = ["derive"] }
