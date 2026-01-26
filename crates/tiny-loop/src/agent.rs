@@ -192,14 +192,25 @@ impl Agent {
     /// # Example
     /// ```
     /// use tiny_loop::{Agent, llm::OpenAIProvider, types::{Parameters, ToolDefinition, ToolFunction}};
-    /// use serde_json::Value;
+    /// use serde_json::{json, Value};
     ///
     /// let defs = vec![ToolDefinition {
     ///     tool_type: "function".into(),
     ///     function: ToolFunction {
-    ///         name: "name".into(),
-    ///         description: "description".into(),
-    ///         parameters: Parameters::from_object(t.input_schema.as_ref().clone()),
+    ///         name: "get_weather".into(),
+    ///         description: "Get weather information".into(),
+    ///         parameters: Parameters::from_object(
+    ///             json!({
+    ///                 "type": "object",
+    ///                 "properties": {
+    ///                     "city": {
+    ///                         "type": "string",
+    ///                         "description": "City name"
+    ///                     }
+    ///                 },
+    ///                 "required": ["city"]
+    ///             }).as_object().unwrap().clone()
+    ///         ),
     ///     },
     /// }];
     ///
