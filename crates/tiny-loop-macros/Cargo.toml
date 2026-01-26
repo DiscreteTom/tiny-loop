@@ -2,6 +2,12 @@
 name = "tiny-loop-macros"
 version = "0.1.0"
 edition = "2021"
+authors = ["DiscreteTom"]
+license = "MIT"
+description = "Procedural macros for tiny-loop"
+repository = "https://github.com/DiscreteTom/tiny-loop"
+keywords = ["ai", "agent", "llm", "macro"]
+categories = ["development-tools"]
 
 [lib]
 proc-macro = true
