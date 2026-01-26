@@ -1,5 +1,6 @@
 use super::types::Message;
 use crate::{
+    history::{History, InfiniteHistory},
     llm::LLMProvider,
     tool::{ClosureTool, ParallelExecutor, ToolArgs, ToolExecutor},
     types::ToolDefinition,
@@ -8,7 +9,7 @@ use crate::{
 /// Agent loop that coordinates LLM calls and tool execution.
 /// Uses [`ParallelExecutor`] by default.
 pub struct Agent {
-    pub messages: Vec<Message>,
+    pub history: Box<dyn History>,
     llm: Box<dyn LLMProvider>,
     executor: Box<dyn ToolExecutor>,
     tools: Vec<ToolDefinition>,
@@ -19,24 +20,23 @@ impl Agent {
     pub fn new(llm: impl LLMProvider + 'static) -> Self {
         Self {
             llm: Box::new(llm),
-            messages: Vec::new(),
+            history: Box::new(InfiniteHistory::new()),
             executor: Box::new(ParallelExecutor::new()),
             tools: Vec::new(),
         }
     }
 
-    /// Set messages
+    /// Set custom history manager (default: [`InfiniteHistory`])
     ///
     /// # Example
     /// ```
-    /// use tiny_loop::{Agent, types::Message, llm::OpenAIProvider};
+    /// use tiny_loop::{Agent, history::InfiniteHistory, llm::OpenAIProvider};
     ///
-    /// let messages = vec![Message::User { content: "Hello".into() }];
     /// let agent = Agent::new(OpenAIProvider::new())
-    ///     .messages(messages);
+    ///     .history(InfiniteHistory::new());
     /// ```
-    pub fn messages(mut self, messages: Vec<Message>) -> Self {
-        self.messages = messages;
+    pub fn history(mut self, history: impl History + 'static) -> Self {
+        self.history = Box::new(history);
         self
     }
 
@@ -50,7 +50,7 @@ impl Agent {
     ///     .system("You are a helpful assistant");
     /// ```
     pub fn system(mut self, content: impl Into<String>) -> Self {
-        self.messages.push(Message::System {
+        self.history.add(Message::System {
             content: content.into(),
         });
         self
@@ -167,9 +167,9 @@ impl Agent {
     /// Return the last AI's response
     pub async fn run(&mut self) -> anyhow::Result<String> {
         loop {
-            let message = self.llm.call(&self.messages, &self.tools).await?;
+            let message = self.llm.call(self.history.get_all(), &self.tools).await?;
 
-            self.messages.push(message.clone());
+            self.history.add(message.clone());
 
             match message {
                 Message::Assistant {
@@ -177,7 +177,7 @@ impl Agent {
                     ..
                 } => {
                     let results = self.executor.execute(calls).await;
-                    self.messages.extend(results);
+                    self.history.add_batch(results);
                 }
                 Message::Assistant { content, .. } => {
                     return Ok(content);
@@ -190,7 +190,7 @@ impl Agent {
     /// Run the agent loop with a new user input appended.
     /// Return the last AI's response
     pub async fn chat(&mut self, prompt: impl Into<String>) -> anyhow::Result<String> {
-        self.messages.push(Message::User {
+        self.history.add(Message::User {
             content: prompt.into(),
         });
         self.run().await
