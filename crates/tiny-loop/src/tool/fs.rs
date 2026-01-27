@@ -11,13 +11,9 @@ pub async fn read(
     start: Option<usize>,
     /// Optional end character index (default: 5000)
     end: Option<usize>,
-) -> Result<String, String> {
+) -> String {
     match tokio::fs::read_to_string(&path).await {
-        Ok(content) => Ok(truncate_text(
-            content,
-            start.unwrap_or(0),
-            end.unwrap_or(5000),
-        )),
-        Err(e) => Err(format!("Error reading file: {}", e)),
+        Ok(content) => truncate_text(content, start.unwrap_or(0), end.unwrap_or(5000)),
+        Err(e) => format!("Error reading file: {}", e),
     }
 }
