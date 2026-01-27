@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The `#[tool]` macro will panic if functions/methods' return type is not `String`
+
 ### Fixed
 
 - The built-in `read` tool now returns `String`

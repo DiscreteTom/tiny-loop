@@ -25,6 +25,11 @@ fn tool_impl_block(mut impl_block: ItemImpl, trait_path: proc_macro2::TokenStrea
 
     for item in &mut impl_block.items {
         if let ImplItem::Fn(method) = item {
+            // Validate return type
+            if let Err(err) = validate_return_type(&method.sig) {
+                return TokenStream::from(err.to_compile_error());
+            }
+
             let args_struct = extract_args_struct(&method.sig, &method.attrs);
             let struct_name = &args_struct.name;
             let param_names: Vec<_> = args_struct
@@ -93,6 +98,12 @@ fn tool_impl_block(mut impl_block: ItemImpl, trait_path: proc_macro2::TokenStrea
 
 fn tool_impl_fn(mut input: ItemFn, trait_path: proc_macro2::TokenStream) -> TokenStream {
     let args_struct = extract_args_struct(&input.sig, &input.attrs);
+
+    // Validate return type
+    if let Err(err) = validate_return_type(&input.sig) {
+        return TokenStream::from(err.to_compile_error());
+    }
+
     let struct_name = &args_struct.name;
     let param_names: Vec<_> = args_struct
         .fields
@@ -207,4 +218,31 @@ fn to_pascal_case(s: &str) -> String {
             }
         })
         .collect()
+}
+
+fn validate_return_type(sig: &syn::Signature) -> Result<(), syn::Error> {
+    use syn::{ReturnType, Type, TypePath};
+
+    match &sig.output {
+        ReturnType::Default => {
+            Err(syn::Error::new_spanned(
+                sig,
+                "Tool function must return String, but returns ()",
+            ))
+        }
+        ReturnType::Type(_, ty) => {
+            // Check if type is String (std::string::String or any path ending with String)
+            if let Type::Path(TypePath { path, .. }) = &**ty {
+                if let Some(last_seg) = path.segments.last() {
+                    if last_seg.ident == "String" {
+                        return Ok(());
+                    }
+                }
+            }
+            Err(syn::Error::new_spanned(
+                ty,
+                "Tool function must return String",
+            ))
+        }
+    }
 }
