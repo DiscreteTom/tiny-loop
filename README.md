@@ -16,8 +16,13 @@ Minimal AI agent framework in Rust.
 
 ## Installation
 
-```sh
-cargo add tiny-loop
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+tiny-loop = "0.1"
+serde = { version = "1", features = ["derive"] }
+schemars = "1"
 ```
 
 ## Quick Start
