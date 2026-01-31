@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Re-exported `serde` and `schemars` to ensure version compatibility for users
+- The `#[tool]` macro now uses re-exported dependencies (`tiny_loop::serde`, `tiny_loop::schemars`)
+
 ## [0.1.1] - 2025-01-28
 
 ### Changed

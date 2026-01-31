@@ -9,18 +9,26 @@ struct ArgsStruct {
     tool_description: String,
 }
 
-pub fn tool_impl(item: TokenStream, trait_path: proc_macro2::TokenStream) -> TokenStream {
+pub fn tool_impl(
+    item: TokenStream,
+    trait_path: proc_macro2::TokenStream,
+    deps_path: proc_macro2::TokenStream,
+) -> TokenStream {
     // Try parsing as impl block first
     if let Ok(impl_block) = syn::parse::<ItemImpl>(item.clone()) {
-        return tool_impl_block(impl_block, trait_path);
+        return tool_impl_block(impl_block, trait_path, deps_path);
     }
 
     // Otherwise parse as function
     let input = parse_macro_input!(item as ItemFn);
-    tool_impl_fn(input, trait_path)
+    tool_impl_fn(input, trait_path, deps_path)
 }
 
-fn tool_impl_block(mut impl_block: ItemImpl, trait_path: proc_macro2::TokenStream) -> TokenStream {
+fn tool_impl_block(
+    mut impl_block: ItemImpl,
+    trait_path: proc_macro2::TokenStream,
+    deps_path: proc_macro2::TokenStream,
+) -> TokenStream {
     let mut args_structs = Vec::new();
 
     for item in &mut impl_block.items {
@@ -75,7 +83,7 @@ fn tool_impl_block(mut impl_block: ItemImpl, trait_path: proc_macro2::TokenStrea
             let tool_description = &s.tool_description;
             quote! {
                 #[doc = concat!("Arguments for the `", #tool_name, "` tool.")]
-                #[derive(serde::Deserialize, schemars::JsonSchema)]
+                #[derive(#deps_path::serde::Deserialize, #deps_path::schemars::JsonSchema)]
                 pub struct #name {
                     #fields
                 }
@@ -96,7 +104,11 @@ fn tool_impl_block(mut impl_block: ItemImpl, trait_path: proc_macro2::TokenStrea
     TokenStream::from(expanded)
 }
 
-fn tool_impl_fn(mut input: ItemFn, trait_path: proc_macro2::TokenStream) -> TokenStream {
+fn tool_impl_fn(
+    mut input: ItemFn,
+    trait_path: proc_macro2::TokenStream,
+    deps_path: proc_macro2::TokenStream,
+) -> TokenStream {
     let args_struct = extract_args_struct(&input.sig, &input.attrs);
 
     // Validate return type
@@ -142,7 +154,7 @@ fn tool_impl_fn(mut input: ItemFn, trait_path: proc_macro2::TokenStream) -> Toke
 
     let expanded = quote! {
         #[doc = concat!("Arguments for the `", #tool_name, "` tool.")]
-        #[derive(serde::Deserialize, schemars::JsonSchema)]
+        #[derive(#deps_path::serde::Deserialize, #deps_path::schemars::JsonSchema)]
         pub struct #struct_name {
             #fields
         }
@@ -224,12 +236,10 @@ fn validate_return_type(sig: &syn::Signature) -> Result<(), syn::Error> {
     use syn::{ReturnType, Type, TypePath};
 
     match &sig.output {
-        ReturnType::Default => {
-            Err(syn::Error::new_spanned(
-                sig,
-                "Tool function must return String, but returns ()",
-            ))
-        }
+        ReturnType::Default => Err(syn::Error::new_spanned(
+            sig,
+            "Tool function must return String, but returns ()",
+        )),
         ReturnType::Type(_, ty) => {
             // Check if type is String (std::string::String or any path ending with String)
             if let Type::Path(TypePath { path, .. }) = &**ty {

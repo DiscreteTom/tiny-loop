@@ -69,7 +69,7 @@ use quote::quote;
 /// Expands to:
 /// ```ignore
 /// /// Arguments for the `fetch` tool.
-/// #[derive(serde::Deserialize, schemars::JsonSchema)]
+/// #[derive(tiny_loop::serde::Deserialize, tiny_loop::schemars::JsonSchema)]
 /// pub struct FetchArgs {
 ///     /// URL to fetch
 ///     pub url: String,
@@ -107,7 +107,7 @@ use quote::quote;
 /// Expands to:
 /// ```ignore
 /// /// Arguments for the `query` tool.
-/// #[derive(serde::Deserialize, schemars::JsonSchema)]
+/// #[derive(tiny_loop::serde::Deserialize, tiny_loop::schemars::JsonSchema)]
 /// pub struct QueryArgs {
 ///     /// SQL query
 ///     pub sql: String,
@@ -128,12 +128,12 @@ use quote::quote;
 /// ```
 #[proc_macro_attribute]
 pub fn tool(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    tool_impl(item, quote!(tiny_loop::tool::ToolArgs))
+    tool_impl(item, quote!(tiny_loop::tool::ToolArgs), quote!(tiny_loop))
 }
 
 /// Same as `#[tool]` but uses internal `ToolArgs` path for use within the `tiny-loop` crate.
 #[doc(hidden)]
 #[proc_macro_attribute]
 pub fn tool_internal(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    tool_impl(item, quote!(crate::tool::ToolArgs))
+    tool_impl(item, quote!(crate::tool::ToolArgs), quote!(crate))
 }
