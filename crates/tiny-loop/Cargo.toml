@@ -13,13 +13,13 @@ categories = ["api-bindings", "asynchronous"]
 [dependencies]
 tiny-loop-macros = { version = "0.1.2", path = "../tiny-loop-macros" }
 anyhow = "1"
-schemars = "1.2.0"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
-reqwest = { version = "0.13.1", features = ["json", "stream"] }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.13", features = ["json", "stream"] }
 html2md = { version = "0.2" }
-futures = "0.3.31"
-async-trait = "0.1.89"
-tokio = { version = "1.49.0", features = ["fs", "macros", "rt-multi-thread"] }
+futures = "0.3"
+async-trait = "0.1"
+tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread"] }
 tracing = "0.1"
-rmcp = { version = "0.14.0", features = ["client", "transport-child-process"] }
+rmcp = { version = "0.14", features = ["client", "transport-child-process"] }
