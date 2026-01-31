@@ -7,12 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Reverted re-export changes due to Rust macro hygiene issues
+- The `#[tool]` macro now uses `serde` and `schemars` directly (users must add these dependencies)
+
 ## [0.1.2] - 2026-01-31
 
 ### Changed
 
-- Re-exported `serde` and `schemars` to ensure version compatibility for users
-- The `#[tool]` macro now uses re-exported dependencies (`tiny_loop::serde`, `tiny_loop::schemars`)
+- ~~Re-exported `serde` and `schemars` to ensure version compatibility for users~~ (reverted)
+- ~~The `#[tool]` macro now uses re-exported dependencies (`tiny_loop::serde`, `tiny_loop::schemars`)~~ (reverted)
 - Use more flexible dependency versions (major/minor instead of patch-specific)
 - Reduced tokio features to only `fs` and `time` (moved `macros` and `rt-multi-thread` to dev-dependencies)
 - Moved `rmcp` to dev-dependencies as it's only used in examples
