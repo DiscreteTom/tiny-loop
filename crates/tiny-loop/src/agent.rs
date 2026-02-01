@@ -269,15 +269,15 @@ impl Agent {
                 )
                 .await?;
 
-            self.history.add(response.message.clone());
+            self.history
+                .add(Message::Assistant(response.message.clone()));
 
             // Execute tool calls if any
-            if let Message::Assistant(msg) = &response.message {
-                if let Some(calls) = &msg.tool_calls {
-                    tracing::debug!("Executing {} tool calls", calls.len());
-                    let results = self.executor.execute(calls.clone()).await;
-                    self.history.add_batch(results);
-                }
+            if let Some(calls) = &response.message.tool_calls {
+                tracing::debug!("Executing {} tool calls", calls.len());
+                let results = self.executor.execute(calls.clone()).await;
+                self.history
+                    .add_batch(results.into_iter().map(Message::Tool).collect());
             }
 
             // Break loop if finish reason is not tool_calls
@@ -289,10 +289,7 @@ impl Agent {
                     "Agent loop completed, finish_reason: {:?}",
                     response.finish_reason
                 );
-                if let Message::Assistant(msg) = response.message {
-                    return Ok(msg.content);
-                }
-                return Ok(String::new());
+                return Ok(response.message.content);
             }
         }
     }

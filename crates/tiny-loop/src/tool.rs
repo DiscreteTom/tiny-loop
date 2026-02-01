@@ -2,7 +2,7 @@ mod args;
 mod closure;
 mod executor;
 
-use crate::types::{Message, ToolCall};
+use crate::types::{Message, ToolCall, ToolMessage};
 use async_trait::async_trait;
 use futures::future::join_all;
 
@@ -22,14 +22,12 @@ pub trait Tool {
     async fn call(&self, args: String) -> String;
 
     /// Executes multiple tool calls in parallel. Override to customize execution behavior.
-    async fn call_batch(&self, args: Vec<ToolCall>) -> Vec<Message> {
+    async fn call_batch(&self, args: Vec<ToolCall>) -> Vec<ToolMessage> {
         join_all(
             args.into_iter()
-                .map(async |call| {
-                    Message::Tool(crate::types::ToolMessage {
-                        tool_call_id: call.id,
-                        content: self.call(call.function.arguments).await,
-                    })
+                .map(async |call| ToolMessage {
+                    tool_call_id: call.id,
+                    content: self.call(call.function.arguments).await,
                 })
                 .collect::<Vec<_>>(),
         )

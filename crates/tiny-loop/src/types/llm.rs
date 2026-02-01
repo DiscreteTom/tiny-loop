@@ -1,4 +1,4 @@
-use super::message::Message;
+use super::message::{AssistantMessage, Message};
 use serde::{Deserialize, Serialize};
 
 /// Callback for streaming LLM responses
@@ -19,6 +19,6 @@ pub enum FinishReason {
 /// LLM response containing message and finish reason
 #[derive(Debug, Clone)]
 pub struct LLMResponse {
-    pub message: Message,
+    pub message: AssistantMessage,
     pub finish_reason: FinishReason,
 }

@@ -2,7 +2,7 @@ mod parallel;
 mod sequential;
 
 use super::Tool;
-use crate::types::{Message, ToolCall};
+use crate::types::{ToolCall, ToolMessage};
 use async_trait::async_trait;
 
 pub use parallel::*;
@@ -15,5 +15,5 @@ pub trait ToolExecutor {
     fn add(&mut self, name: String, tool: Box<dyn Tool + Sync>) -> Option<Box<dyn Tool + Sync>>;
 
     /// Executes the given tool calls and returns the results as messages.
-    async fn execute(&self, calls: Vec<ToolCall>) -> Vec<Message>;
+    async fn execute(&self, calls: Vec<ToolCall>) -> Vec<ToolMessage>;
 }

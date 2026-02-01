@@ -334,8 +334,11 @@ impl OpenAIProvider {
                 .map_err(|e| anyhow::anyhow!("Failed to parse response: {}. Body: {}", e, body))?;
             tracing::debug!("LLM API call completed successfully");
             let choice = &chat_response.choices[0];
+            let Message::Assistant(msg) = &choice.message else {
+                anyhow::bail!("Expected Assistant message, got: {:?}", choice.message);
+            };
             Ok(LLMResponse {
-                message: choice.message.clone(),
+                message: msg.clone(),
                 finish_reason: choice.finish_reason.clone(),
             })
         }
@@ -388,14 +391,14 @@ impl OpenAIProvider {
 
         tracing::debug!("Streaming completed, total length: {}", content.len());
         Ok(LLMResponse {
-            message: Message::Assistant(crate::types::AssistantMessage {
+            message: crate::types::AssistantMessage {
                 content,
                 tool_calls: if tool_calls.is_empty() {
                     None
                 } else {
                     Some(tool_calls)
                 },
-            }),
+            },
             finish_reason,
         })
     }

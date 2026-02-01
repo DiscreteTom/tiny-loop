@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     tool::{Tool, executor::ToolExecutor},
-    types::{Message, ToolCall},
+    types::ToolCall,
 };
 use async_trait::async_trait;
 
@@ -26,22 +26,22 @@ impl ToolExecutor for SequentialExecutor {
         self.tools.insert(name, tool)
     }
 
-    async fn execute(&self, calls: Vec<ToolCall>) -> Vec<Message> {
+    async fn execute(&self, calls: Vec<ToolCall>) -> Vec<crate::types::ToolMessage> {
         tracing::debug!("Executing {} tool calls sequentially", calls.len());
         let mut results = Vec::new();
         for call in calls {
             tracing::debug!("Executing tool '{}'", call.function.name);
             let message = if let Some(tool) = self.tools.get(&call.function.name) {
-                Message::Tool(crate::types::ToolMessage {
+                crate::types::ToolMessage {
                     tool_call_id: call.id.clone(),
                     content: tool.call(call.function.arguments).await,
-                })
+                }
             } else {
                 tracing::debug!("Tool '{}' not found", call.function.name);
-                Message::Tool(crate::types::ToolMessage {
+                crate::types::ToolMessage {
                     tool_call_id: call.id,
                     content: format!("Tool '{}' not found", call.function.name),
-                })
+                }
             };
             results.push(message);
         }

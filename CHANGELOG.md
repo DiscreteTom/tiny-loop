@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Breaking**: `LLMProvider::call` now returns `LLMResponse` instead of `Message`
+- **Breaking**: `LLMResponse.message` is now `AssistantMessage` instead of `Message`
+- **Breaking**: `Tool::call_batch` now returns `Vec<ToolMessage>` instead of `Vec<Message>`
+- **Breaking**: `ToolExecutor::execute` now returns `Vec<ToolMessage>` instead of `Vec<Message>`
 - **Breaking**: `StreamCallback` moved from `llm` module to `types` module
 - **Breaking**: `Message` enum variants now use tuple structs instead of inline fields
 - Agent loop now respects `finish_reason` and stops when it's not `ToolCalls`
