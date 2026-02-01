@@ -75,6 +75,11 @@ impl Agent {
         self
     }
 
+    /// Get reference to registered tool definitions
+    pub fn tools(&self) -> &[ToolDefinition] {
+        &self.tools
+    }
+
     /// Set a custom tool executor (default: [`ParallelExecutor`])
     ///
     /// # Example

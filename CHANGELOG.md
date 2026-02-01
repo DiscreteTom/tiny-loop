@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Agent::tools()` method to get reference to registered tool definitions
+
 ### Changed
 
 - **Breaking**: `read`, `fetch`, and `truncate_text` functions now use `len` parameter instead of `end` parameter (default: 5000)
