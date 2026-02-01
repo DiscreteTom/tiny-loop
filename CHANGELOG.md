@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking**: `read`, `fetch`, and `truncate_text` functions now use `len` parameter instead of `end` parameter (default: 5000)
+
 ## [0.1.3] - 2026-01-31
 
 ### Changed

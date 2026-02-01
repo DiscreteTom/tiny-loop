@@ -1,6 +1,6 @@
 /// Truncate text content with pagination support
-pub fn truncate_text(content: String, start: usize, end: usize) -> String {
-    let end_idx = end.min(content.len());
+pub fn truncate_text(content: String, start: usize, len: usize) -> String {
+    let end_idx = start.saturating_add(len).min(content.len());
     let total_len = content.len();
 
     let mut result: String = content
@@ -41,7 +41,7 @@ mod tests {
 
     #[test]
     fn test_custom_range() {
-        let result = truncate_text("0123456789".to_string(), 2, 5);
+        let result = truncate_text("0123456789".to_string(), 2, 3);
         assert_eq!(result, "234\n\n---\ntruncated [5/10 chars]");
     }
 
@@ -52,7 +52,7 @@ mod tests {
     }
 
     #[test]
-    fn test_end_beyond_length() {
+    fn test_len_beyond_length() {
         let result = truncate_text("hello".to_string(), 0, 100);
         assert_eq!(result, "hello");
     }

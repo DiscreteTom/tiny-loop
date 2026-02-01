@@ -9,8 +9,8 @@ pub async fn fetch(
     url: String,
     /// Optional start character index (default: 0)
     start: Option<usize>,
-    /// Optional end character index (default: 5000)
-    end: Option<usize>,
+    /// Optional length in characters (default: 5000)
+    len: Option<usize>,
 ) -> String {
     let response = match reqwest::get(&url).await {
         Ok(r) => r,
@@ -23,5 +23,5 @@ pub async fn fetch(
     };
 
     let markdown = html2md::parse_html(&html);
-    truncate_text(markdown, start.unwrap_or(0), end.unwrap_or(5000))
+    truncate_text(markdown, start.unwrap_or(0), len.unwrap_or(5000))
 }
