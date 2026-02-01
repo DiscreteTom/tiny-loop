@@ -22,7 +22,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-tiny-loop = "0.1"
+tiny-loop = "0.2"
 serde = { version = "1", features = ["derive"] }
 schemars = "1"
 ```
