@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **Breaking**: `OpenAIProvider::temperature()` and `OpenAIProvider::max_tokens()` methods (use `body()` instead)
+
 ## [0.2.1] - 2026-02-01
 
 ### Removed

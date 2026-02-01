@@ -13,12 +13,6 @@ struct ChatRequest {
     messages: Vec<Message>,
     /// Available tools for the model
     tools: Vec<ToolDefinition>,
-    /// Sampling temperature (0-2)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    temperature: Option<f32>,
-    /// Maximum tokens to generate
-    #[serde(skip_serializing_if = "Option::is_none")]
-    max_tokens: Option<u32>,
     /// Enable streaming
     #[serde(skip_serializing_if = "Option::is_none")]
     stream: Option<bool>,
@@ -68,8 +62,7 @@ struct Choice {
 ///
 /// let provider = OpenAIProvider::new()
 ///     .api_key("sk-...")
-///     .model("gpt-4o")
-///     .temperature(0.7);
+///     .model("gpt-4o");
 /// ```
 pub struct OpenAIProvider {
     /// HTTP client for API requests
@@ -80,10 +73,6 @@ pub struct OpenAIProvider {
     api_key: String,
     /// Model identifier
     model: String,
-    /// Sampling temperature
-    temperature: Option<f32>,
-    /// Maximum tokens to generate
-    max_tokens: Option<u32>,
     /// Additional HTTP headers
     custom_headers: HeaderMap,
     /// Maximum number of retries on failure
@@ -116,8 +105,6 @@ impl OpenAIProvider {
             base_url: "https://api.openai.com/v1".into(),
             api_key: "".into(),
             model: "gpt-4o".into(),
-            temperature: None,
-            max_tokens: None,
             custom_headers: HeaderMap::new(),
             max_retries: 3,
             retry_delay_ms: 1000,
@@ -167,36 +154,6 @@ impl OpenAIProvider {
     /// ```
     pub fn model(mut self, value: impl Into<String>) -> Self {
         self.model = value.into();
-        self
-    }
-
-    /// Set the temperature for response randomness (default: `None`)
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tiny_loop::llm::OpenAIProvider;
-    ///
-    /// let provider = OpenAIProvider::new()
-    ///     .temperature(0.7);
-    /// ```
-    pub fn temperature(mut self, value: impl Into<Option<f32>>) -> Self {
-        self.temperature = value.into();
-        self
-    }
-
-    /// Set the maximum number of tokens to generate (default: `None`)
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tiny_loop::llm::OpenAIProvider;
-    ///
-    /// let provider = OpenAIProvider::new()
-    ///     .max_tokens(1000);
-    /// ```
-    pub fn max_tokens(mut self, value: impl Into<Option<u32>>) -> Self {
-        self.max_tokens = value.into();
         self
     }
 
@@ -336,8 +293,6 @@ impl OpenAIProvider {
             model: self.model.clone(),
             messages: messages.to_vec(),
             tools: tools.to_vec(),
-            temperature: self.temperature,
-            max_tokens: self.max_tokens,
             stream: if stream_callback.is_some() {
                 Some(true)
             } else {
