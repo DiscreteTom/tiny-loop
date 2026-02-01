@@ -2,7 +2,7 @@ mod args;
 mod closure;
 mod executor;
 
-use crate::types::{Message, ToolCall, ToolMessage};
+use crate::types::{ToolCall, ToolMessage};
 use async_trait::async_trait;
 use futures::future::join_all;
 

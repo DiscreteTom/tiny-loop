@@ -1,4 +1,4 @@
-use super::message::{AssistantMessage, Message};
+use super::message::AssistantMessage;
 use serde::{Deserialize, Serialize};
 
 /// Callback for streaming LLM responses
