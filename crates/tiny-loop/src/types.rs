@@ -1,4 +1,4 @@
-use schemars::{JsonSchema, schema_for};
+use schemars::{JsonSchema, generate::SchemaSettings};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
@@ -106,7 +106,12 @@ impl Parameters {
 
     /// Create Parameters from a type implementing JsonSchema
     pub fn from_type<T: JsonSchema>() -> Self {
-        Self::from_schema(schema_for!(T))
+        let settings = SchemaSettings::default().with(|s| {
+            s.inline_subschemas = true;
+        });
+        let generator = settings.into_generator();
+        let schema = generator.into_root_schema_for::<T>();
+        Self::from_schema(schema)
     }
 }
 
@@ -214,7 +219,7 @@ mod tests {
             function: ToolFunction {
                 name: "test".into(),
                 description: "desc".into(),
-                parameters: Parameters::from_schema(schema_for!(String)),
+                parameters: Parameters::from_type::<String>(),
             },
         };
         let json = serde_json::to_string(&td).unwrap();

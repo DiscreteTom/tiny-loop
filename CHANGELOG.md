@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking**: `read`, `fetch`, and `truncate_text` functions now use `len` parameter instead of `end` parameter (default: 5000)
 
+### Fixed
+
+- Tool schemas now inline subschemas instead of using `$ref` references
+
 ## [0.1.3] - 2026-01-31
 
 ### Changed
