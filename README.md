@@ -5,6 +5,8 @@
 
 Minimal AI agent framework in Rust.
 
+> **⚠️ Early Development**: This project is in early phase and the API will change frequently.
+
 ## Features
 
 - [`#[tool]`](https://docs.rs/tiny-loop/latest/tiny_loop/tool/attr.tool.html) macro for [functions](./crates/tiny-loop/examples/fn_tools.rs) and [methods](./crates/tiny-loop/examples/bind_tools.rs) to create custom tools.
