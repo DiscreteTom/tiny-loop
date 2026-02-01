@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **Breaking**: Built-in `read` and `fetch` tools
+- **Breaking**: `truncate_text` utility function
+
 ## [0.1.4] - 2026-02-01
 
 ### Added

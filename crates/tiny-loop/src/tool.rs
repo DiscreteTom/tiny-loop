@@ -1,9 +1,6 @@
 mod args;
 mod closure;
 mod executor;
-mod fs;
-mod utils;
-mod web;
 
 use crate::types::{Message, ToolCall};
 use async_trait::async_trait;
@@ -12,9 +9,7 @@ use futures::future::join_all;
 pub use args::*;
 pub(crate) use closure::*;
 pub use executor::*;
-pub use fs::*;
 pub use tiny_loop_macros::tool;
-pub use web::*;
 
 /// A trait for tools that can be called with JSON string arguments.
 ///
