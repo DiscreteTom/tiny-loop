@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `Parameters::from_object` now removes `description` field from schema objects
+
 ### Removed
 
 - **Breaking**: Built-in `read` and `fetch` tools

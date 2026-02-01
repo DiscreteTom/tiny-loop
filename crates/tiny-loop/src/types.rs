@@ -91,9 +91,10 @@ pub struct Parameters(Map<String, Value>);
 impl Parameters {
     /// Create Parameters from a Json object (map)
     pub fn from_object(mut obj: Map<String, Value>) -> Self {
-        // Remove `$schema` and `title` fields from JSON schema
+        // Remove `$schema`, `title`, and `description` fields from JSON schema
         obj.remove("$schema");
         obj.remove("title");
+        obj.remove("description");
 
         Self(obj)
     }
