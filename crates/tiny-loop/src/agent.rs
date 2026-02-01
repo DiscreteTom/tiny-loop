@@ -270,20 +270,30 @@ impl Agent {
 
             self.history.add(response.message.clone());
 
-            match response.message {
-                Message::Assistant {
-                    tool_calls: Some(calls),
-                    ..
-                } => {
-                    tracing::debug!("Executing {} tool calls", calls.len());
-                    let results = self.executor.execute(calls).await;
-                    self.history.add_batch(results);
-                }
-                Message::Assistant { content, .. } => {
-                    tracing::debug!("Agent loop completed, response length: {}", content.len());
+            // Execute tool calls if any
+            if let Message::Assistant {
+                tool_calls: Some(calls),
+                ..
+            } = &response.message
+            {
+                tracing::debug!("Executing {} tool calls", calls.len());
+                let results = self.executor.execute(calls.clone()).await;
+                self.history.add_batch(results);
+            }
+
+            // Break loop if finish reason is not tool_calls
+            if !matches!(
+                response.finish_reason,
+                crate::types::FinishReason::ToolCalls
+            ) {
+                tracing::debug!(
+                    "Agent loop completed, finish_reason: {:?}",
+                    response.finish_reason
+                );
+                if let Message::Assistant { content, .. } = response.message {
                     return Ok(content);
                 }
-                _ => return Ok(String::new()),
+                return Ok(String::new());
             }
         }
     }

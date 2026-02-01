@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Breaking**: `LLMProvider::call` now returns `LLMResponse` instead of `Message`
+- Agent loop now respects `finish_reason` and stops when it's not `ToolCalls`
 
 ### Removed
 
