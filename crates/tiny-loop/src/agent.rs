@@ -1,4 +1,3 @@
-use super::types::Message;
 use crate::{
     history::{History, InfiniteHistory},
     llm::LLMProvider,
@@ -256,41 +255,81 @@ impl Agent {
         self
     }
 
+    /// Execute one iteration of the agent loop.
+    /// Returns `Ok(Some(content))` if loop should terminate, `Ok(None)` to continue
+    ///
+    /// This is usually used to customize the agent loop.
+    ///
+    /// # Example
+    /// ```
+    /// use tiny_loop::{Agent, llm::OpenAIProvider};
+    ///
+    /// # async fn example() -> anyhow::Result<()> {
+    /// let mut agent = Agent::new(OpenAIProvider::new())
+    ///     .system("You are a helpful assistant");
+    ///
+    /// // Custom loop with early break
+    /// let mut iterations = 0;
+    /// loop {
+    ///     println!("Before step {}", iterations);
+    ///     
+    ///     if let Some(content) = agent.step().await? {
+    ///         println!("Completed: {}", content);
+    ///         break;
+    ///     }
+    ///     
+    ///     iterations += 1;
+    ///     if iterations > 10 {
+    ///         println!("Max iterations reached");
+    ///         break;
+    ///     }
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn step(&mut self) -> anyhow::Result<Option<String>> {
+        tracing::trace!("Calling LLM with {} messages", self.history.get_all().len());
+        let response = self
+            .llm
+            .call(
+                self.history.get_all(),
+                &self.tools,
+                self.stream_callback.as_mut(),
+            )
+            .await?;
+
+        self.history.add(response.message.clone().into());
+
+        // Execute tool calls if any
+        if let Some(calls) = &response.message.tool_calls {
+            tracing::debug!("Executing {} tool calls", calls.len());
+            let results = self.executor.execute(calls.clone()).await;
+            self.history
+                .add_batch(results.into_iter().map(|m| m.into()).collect());
+        }
+
+        // Break loop if finish reason is not tool_calls
+        if !matches!(
+            response.finish_reason,
+            crate::types::FinishReason::ToolCalls
+        ) {
+            tracing::debug!(
+                "Agent loop completed, finish_reason: {:?}",
+                response.finish_reason
+            );
+            return Ok(Some(response.message.content));
+        }
+
+        Ok(None)
+    }
+
     /// Run the agent loop until completion.
     /// Return the last AI's response
     pub async fn run(&mut self) -> anyhow::Result<String> {
         tracing::debug!("Starting agent loop");
         loop {
-            tracing::trace!("Calling LLM with {} messages", self.history.get_all().len());
-            let response = self
-                .llm
-                .call(
-                    self.history.get_all(),
-                    &self.tools,
-                    self.stream_callback.as_mut(),
-                )
-                .await?;
-
-            self.history.add(response.message.clone().into());
-
-            // Execute tool calls if any
-            if let Some(calls) = &response.message.tool_calls {
-                tracing::debug!("Executing {} tool calls", calls.len());
-                let results = self.executor.execute(calls.clone()).await;
-                self.history
-                    .add_batch(results.into_iter().map(|m| m.into()).collect());
-            }
-
-            // Break loop if finish reason is not tool_calls
-            if !matches!(
-                response.finish_reason,
-                crate::types::FinishReason::ToolCalls
-            ) {
-                tracing::debug!(
-                    "Agent loop completed, finish_reason: {:?}",
-                    response.finish_reason
-                );
-                return Ok(response.message.content);
+            if let Some(content) = self.step().await? {
+                return Ok(content);
             }
         }
     }

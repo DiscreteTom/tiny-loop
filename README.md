@@ -13,6 +13,7 @@ Minimal AI agent framework in Rust.
 - [Register MCP tools](./crates/tiny-loop/examples/mcp.rs)
 - [History management](./crates/tiny-loop/examples/history.rs)
 - [Streaming](./crates/tiny-loop/examples/common/streaming_cli.rs)
+- [Custom loop control](./crates/tiny-loop/examples/custom_loop.rs)
 - Parallel tool execution
 - Observability via [`tracing`](https://docs.rs/tracing/latest/tracing/)
 
