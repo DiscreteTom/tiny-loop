@@ -208,18 +208,23 @@ impl OpenAIProvider {
     /// use tiny_loop::llm::OpenAIProvider;
     ///
     /// let provider = OpenAIProvider::new()
-    ///     .header("x-custom-header", "value");
+    ///     .header("x-custom-header", "value")
+    ///     .unwrap();
     /// ```
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if the header name or value contains invalid characters.
-    pub fn header(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+    /// Returns an error if the header name or value contains invalid characters.
+    pub fn header(
+        mut self,
+        key: impl Into<String>,
+        value: impl Into<String>,
+    ) -> anyhow::Result<Self> {
         self.custom_headers.insert(
-            HeaderName::try_from(key.into()).unwrap(),
-            HeaderValue::try_from(value.into()).unwrap(),
+            HeaderName::try_from(key.into())?,
+            HeaderValue::try_from(value.into())?,
         );
-        self
+        Ok(self)
     }
 
     /// Set maximum number of retries on failure (default: 3)

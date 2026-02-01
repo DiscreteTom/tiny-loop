@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking**: `OpenAIProvider::header()` now returns `Result<Self>` instead of panicking
 - `Parameters::from_object` now removes `description` field from schema objects
 
 ### Removed
