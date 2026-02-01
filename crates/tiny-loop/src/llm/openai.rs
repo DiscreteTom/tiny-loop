@@ -1,4 +1,4 @@
-use crate::types::{FinishReason, Message, ToolDefinition};
+use crate::types::{FinishReason, LLMResponse, Message, StreamCallback, ToolDefinition};
 use async_trait::async_trait;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
@@ -252,8 +252,8 @@ impl super::LLMProvider for OpenAIProvider {
         &self,
         messages: &[Message],
         tools: &[ToolDefinition],
-        mut stream_callback: Option<&mut super::StreamCallback>,
-    ) -> anyhow::Result<super::LLMResponse> {
+        mut stream_callback: Option<&mut StreamCallback>,
+    ) -> anyhow::Result<LLMResponse> {
         let mut attempt = 0;
         loop {
             attempt += 1;
@@ -291,8 +291,8 @@ impl OpenAIProvider {
         &self,
         messages: &[Message],
         tools: &[ToolDefinition],
-        stream_callback: Option<&mut super::StreamCallback>,
-    ) -> anyhow::Result<super::LLMResponse> {
+        stream_callback: Option<&mut StreamCallback>,
+    ) -> anyhow::Result<LLMResponse> {
         let request = ChatRequest {
             model: self.model.clone(),
             messages: messages.to_vec(),
@@ -334,7 +334,7 @@ impl OpenAIProvider {
                 .map_err(|e| anyhow::anyhow!("Failed to parse response: {}. Body: {}", e, body))?;
             tracing::debug!("LLM API call completed successfully");
             let choice = &chat_response.choices[0];
-            Ok(super::LLMResponse {
+            Ok(LLMResponse {
                 message: choice.message.clone(),
                 finish_reason: choice.finish_reason.clone(),
             })
@@ -344,8 +344,8 @@ impl OpenAIProvider {
     async fn handle_stream(
         &self,
         response: reqwest::Response,
-        callback: &mut super::StreamCallback,
-    ) -> anyhow::Result<super::LLMResponse> {
+        callback: &mut StreamCallback,
+    ) -> anyhow::Result<LLMResponse> {
         use futures::TryStreamExt;
 
         let mut stream = response.bytes_stream();
@@ -387,7 +387,7 @@ impl OpenAIProvider {
         }
 
         tracing::debug!("Streaming completed, total length: {}", content.len());
-        Ok(super::LLMResponse {
+        Ok(LLMResponse {
             message: Message::Assistant {
                 content,
                 tool_calls: if tool_calls.is_empty() {

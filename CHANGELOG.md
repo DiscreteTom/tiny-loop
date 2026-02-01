@@ -15,7 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Breaking**: `LLMProvider::call` now returns `LLMResponse` instead of `Message`
+- **Breaking**: `StreamCallback` moved from `llm` module to `types` module
 - Agent loop now respects `finish_reason` and stops when it's not `ToolCalls`
+- Split `types.rs` into submodules: `message.rs`, `tool.rs`, `llm.rs`
 
 ### Removed
 

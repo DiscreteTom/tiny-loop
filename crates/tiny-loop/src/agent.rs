@@ -1,9 +1,9 @@
 use super::types::Message;
 use crate::{
     history::{History, InfiniteHistory},
-    llm::{LLMProvider, StreamCallback},
+    llm::LLMProvider,
     tool::{ClosureTool, ParallelExecutor, ToolArgs, ToolExecutor},
-    types::ToolDefinition,
+    types::{StreamCallback, ToolDefinition},
 };
 
 /// Agent loop that coordinates LLM calls and tool execution.
