@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `OpenAIProvider::body()` method to set custom request body fields
+
 ### Changed
 
 - `Parameters::from_object` now removes `description` field from schema objects

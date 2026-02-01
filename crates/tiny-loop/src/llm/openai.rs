@@ -2,6 +2,7 @@ use crate::types::{Message, ToolDefinition};
 use async_trait::async_trait;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 
 /// Request payload for OpenAI chat completions API
 #[derive(Serialize)]
@@ -89,6 +90,8 @@ pub struct OpenAIProvider {
     max_retries: u32,
     /// Delay between retries in milliseconds
     retry_delay_ms: u64,
+    /// Custom body fields to merge into the request
+    custom_body: Map<String, Value>,
 }
 
 impl Default for OpenAIProvider {
@@ -118,6 +121,7 @@ impl OpenAIProvider {
             custom_headers: HeaderMap::new(),
             max_retries: 3,
             retry_delay_ms: 1000,
+            custom_body: Map::new(),
         }
     }
 
@@ -247,6 +251,33 @@ impl OpenAIProvider {
         self.retry_delay_ms = delay_ms;
         self
     }
+
+    /// Set custom body fields to merge into the request
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiny_loop::llm::OpenAIProvider;
+    /// use serde_json::json;
+    ///
+    /// let provider = OpenAIProvider::new()
+    ///     .body(json!({
+    ///         "top_p": 0.9,
+    ///         "frequency_penalty": 0.5
+    ///     }))
+    ///     .unwrap();
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the value is not a JSON object
+    pub fn body(mut self, body: Value) -> anyhow::Result<Self> {
+        self.custom_body = body
+            .as_object()
+            .ok_or_else(|| anyhow::anyhow!("body must be a JSON object"))?
+            .clone();
+        Ok(self)
+    }
 }
 
 #[async_trait]
@@ -309,13 +340,16 @@ impl OpenAIProvider {
             },
         };
 
+        let mut body = serde_json::to_value(&request)?.as_object().unwrap().clone();
+        body.extend(self.custom_body.clone());
+
         let response = self
             .client
             .post(format!("{}/chat/completions", self.base_url))
             .header("Authorization", format!("Bearer {}", self.api_key))
             .header("Content-Type", "application/json")
             .headers(self.custom_headers.clone())
-            .json(&request)
+            .json(&body)
             .send()
             .await?;
 
