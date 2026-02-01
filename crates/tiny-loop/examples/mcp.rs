@@ -6,6 +6,7 @@ use rmcp::{
     model::CallToolRequestParams,
     transport::{ConfigureCommandExt, TokioChildProcess},
 };
+use std::io::{Write, stdout};
 use tiny_loop::{
     Agent,
     llm::OpenAIProvider,
@@ -68,7 +69,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm = OpenAIProvider::new()
         .api_key(api_key)
         .base_url("https://openrouter.ai/api/v1")
-        .model("google/gemini-3-flash-preview");
+        .model("google/gemini-3-flash-preview")
+        .stream_callback(|chunk| {
+            print!("{}", chunk);
+            stdout().flush().unwrap();
+        });
 
     let agent = Agent::new(llm)
         .system("You are a helpful assistant")

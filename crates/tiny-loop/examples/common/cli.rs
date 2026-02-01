@@ -1,12 +1,7 @@
 use std::io::{self, Write};
 use tiny_loop::Agent;
 
-pub async fn run_cli_loop(agent: Agent) {
-    let mut agent = agent.stream_callback(|chunk| {
-        print!("{}", chunk);
-        io::stdout().flush().unwrap();
-    });
-
+pub async fn run_cli_loop(mut agent: Agent) {
     println!("Chatbot started. Type 'quit' to exit.\n");
 
     loop {

@@ -1,9 +1,6 @@
 use super::message::AssistantMessage;
 use serde::{Deserialize, Serialize};
 
-/// Callback for streaming LLM responses
-pub type StreamCallback = Box<dyn FnMut(String) + Send>;
-
 /// Finish reason for LLM completion
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]

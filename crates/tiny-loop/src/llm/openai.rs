@@ -1,8 +1,11 @@
-use crate::types::{FinishReason, LLMResponse, Message, StreamCallback, ToolDefinition};
+use crate::types::{FinishReason, LLMResponse, Message, ToolDefinition};
 use async_trait::async_trait;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+
+/// Callback for streaming OpenAI responses
+pub type OpenAIStreamCallback = Box<dyn FnMut(String) + Send + Sync>;
 
 /// Request payload for OpenAI chat completions API
 #[derive(Serialize)]
@@ -85,6 +88,8 @@ pub struct OpenAIProvider {
     retry_delay_ms: u64,
     /// Custom body fields to merge into the request
     custom_body: Map<String, Value>,
+    /// Stream callback for LLM responses
+    stream_callback: Option<OpenAIStreamCallback>,
 }
 
 impl Default for OpenAIProvider {
@@ -113,6 +118,7 @@ impl OpenAIProvider {
             max_retries: 3,
             retry_delay_ms: 1000,
             custom_body: Map::new(),
+            stream_callback: None,
         }
     }
 
@@ -244,15 +250,32 @@ impl OpenAIProvider {
             .clone();
         Ok(self)
     }
+
+    /// Set stream callback for LLM responses
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiny_loop::llm::OpenAIProvider;
+    ///
+    /// let provider = OpenAIProvider::new()
+    ///     .stream_callback(|chunk| print!("{}", chunk));
+    /// ```
+    pub fn stream_callback<F>(mut self, callback: F) -> Self
+    where
+        F: FnMut(String) + Send + Sync + 'static,
+    {
+        self.stream_callback = Some(Box::new(callback));
+        self
+    }
 }
 
 #[async_trait]
 impl super::LLMProvider for OpenAIProvider {
     async fn call(
-        &self,
+        &mut self,
         messages: &[Message],
         tools: &[ToolDefinition],
-        mut stream_callback: Option<&mut StreamCallback>,
     ) -> anyhow::Result<LLMResponse> {
         let mut attempt = 0;
         loop {
@@ -261,16 +284,13 @@ impl super::LLMProvider for OpenAIProvider {
                 model = %self.model,
                 messages = messages.len(),
                 tools = tools.len(),
-                streaming = stream_callback.is_some(),
+                streaming = self.stream_callback.is_some(),
                 attempt = attempt,
                 max_retries = self.max_retries,
                 "Calling LLM API"
             );
 
-            match self
-                .call_once(messages, tools, stream_callback.as_deref_mut())
-                .await
-            {
+            match self.call_once(messages, tools).await {
                 Ok(response) => return Ok(response),
                 Err(e) if attempt > self.max_retries => {
                     tracing::debug!("Max retries exceeded");
@@ -288,16 +308,15 @@ impl super::LLMProvider for OpenAIProvider {
 
 impl OpenAIProvider {
     async fn call_once(
-        &self,
+        &mut self,
         messages: &[Message],
         tools: &[ToolDefinition],
-        stream_callback: Option<&mut StreamCallback>,
     ) -> anyhow::Result<LLMResponse> {
         let request = ChatRequest {
             model: self.model.clone(),
             messages: messages.to_vec(),
             tools: tools.to_vec(),
-            stream: if stream_callback.is_some() {
+            stream: if self.stream_callback.is_some() {
                 Some(true)
             } else {
                 None
@@ -326,8 +345,8 @@ impl OpenAIProvider {
             anyhow::bail!("API error ({}): {}", status, body);
         }
 
-        if let Some(callback) = stream_callback {
-            self.handle_stream(response, callback).await
+        if self.stream_callback.is_some() {
+            self.handle_stream(response).await
         } else {
             let body = response.text().await?;
             let chat_response: ChatResponse = serde_json::from_str(&body)
@@ -344,11 +363,7 @@ impl OpenAIProvider {
         }
     }
 
-    async fn handle_stream(
-        &self,
-        response: reqwest::Response,
-        callback: &mut StreamCallback,
-    ) -> anyhow::Result<LLMResponse> {
+    async fn handle_stream(&mut self, response: reqwest::Response) -> anyhow::Result<LLMResponse> {
         use futures::TryStreamExt;
 
         let mut stream = response.bytes_stream();
@@ -373,7 +388,9 @@ impl OpenAIProvider {
                         if let Some(choice) = chunk.choices.first() {
                             if let Some(delta_content) = &choice.delta.content {
                                 content.push_str(delta_content);
-                                callback(delta_content.clone());
+                                if let Some(callback) = &mut self.stream_callback {
+                                    callback(delta_content.clone());
+                                }
                             }
 
                             if let Some(delta_tool_calls) = &choice.delta.tool_calls {

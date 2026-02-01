@@ -1,6 +1,7 @@
 mod common;
 
 use common::run_cli_loop;
+use std::io::{Write, stdout};
 use tiny_loop::{Agent, history::History, llm::OpenAIProvider, types::Message};
 
 pub struct CustomHistory {
@@ -37,7 +38,11 @@ async fn main() {
     let llm = OpenAIProvider::new()
         .api_key(api_key)
         .base_url("https://openrouter.ai/api/v1")
-        .model("google/gemini-3-flash-preview");
+        .model("google/gemini-3-flash-preview")
+        .stream_callback(|chunk| {
+            print!("{}", chunk);
+            stdout().flush().unwrap();
+        });
 
     let agent = Agent::new(llm)
         .system("You are a helpful assistant")

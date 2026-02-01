@@ -13,15 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `LLMResponse` struct containing `message` and `finish_reason`
 - Message body structs: `SystemMessage`, `UserMessage`, `AssistantMessage`, `ToolMessage`, `CustomMessage`
 - `Agent::step()` method to execute one iteration of the agent loop for custom loop control
+- `OpenAIStreamCallback` type in `llm::openai` module
+- `OpenAIProvider::stream_callback()` method to set streaming callback
 
 ### Changed
 
 - **Breaking**: `LLMProvider::call` now returns `LLMResponse` instead of `Message`
+- **Breaking**: `LLMProvider::call` signature changed to `&mut self` and removed `stream_callback` parameter
 - **Breaking**: `LLMResponse.message` is now `AssistantMessage` instead of `Message`
 - **Breaking**: `Tool::call_batch` now returns `Vec<ToolMessage>` instead of `Vec<Message>`
 - **Breaking**: `ToolExecutor::execute` now returns `Vec<ToolMessage>` instead of `Vec<Message>`
-- **Breaking**: `StreamCallback` moved from `llm` module to `types` module
 - **Breaking**: `Message` enum variants now use tuple structs instead of inline fields
+- **Breaking**: Stream callback moved from `Agent` to provider-specific implementations (e.g., `OpenAIProvider`)
 - Agent loop now respects `finish_reason` and stops when it's not `ToolCalls`
 - Split `types.rs` into submodules: `message.rs`, `tool.rs`, `llm.rs`
 - `Agent::run()` now uses `Agent::step()` internally
@@ -29,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **Breaking**: `OpenAIProvider::temperature()` and `OpenAIProvider::max_tokens()` methods (use `body()` instead)
+- **Breaking**: `Agent::stream_callback()` method (use provider-specific method instead)
+- **Breaking**: `StreamCallback` type from `types` module
 
 ## [0.2.1] - 2026-02-01
 

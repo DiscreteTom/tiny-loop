@@ -1,6 +1,6 @@
 mod openai;
 
-use crate::types::{LLMResponse, Message, StreamCallback, ToolDefinition};
+use crate::types::{LLMResponse, Message, ToolDefinition};
 use async_trait::async_trait;
 
 pub use openai::*;
@@ -9,13 +9,9 @@ pub use openai::*;
 #[async_trait]
 pub trait LLMProvider: Send + Sync {
     /// Call the LLM with messages and available tools, returning the assistant's response
-    ///
-    /// If `stream_callback` is provided, the LLM will be invoked in streaming mode,
-    /// calling the callback for each chunk of the response as it arrives.
     async fn call(
-        &self,
+        &mut self,
         messages: &[Message],
         tools: &[ToolDefinition],
-        stream_callback: Option<&mut StreamCallback>,
     ) -> anyhow::Result<LLMResponse>;
 }

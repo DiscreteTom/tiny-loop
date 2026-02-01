@@ -12,7 +12,7 @@ Minimal AI agent framework in Rust.
 - [`#[tool]`](https://docs.rs/tiny-loop/latest/tiny_loop/tool/attr.tool.html) macro for [functions](./crates/tiny-loop/examples/fn_tools.rs) and [methods](./crates/tiny-loop/examples/bind_tools.rs) to create custom tools.
 - [Register MCP tools](./crates/tiny-loop/examples/mcp.rs)
 - [History management](./crates/tiny-loop/examples/history.rs)
-- [Streaming](./crates/tiny-loop/examples/common/streaming_cli.rs)
+- [Streaming](./crates/tiny-loop/examples/chatbot.rs)
 - [Custom loop control](./crates/tiny-loop/examples/custom_loop.rs)
 - Parallel tool execution
 - Observability via [`tracing`](https://docs.rs/tracing/latest/tracing/)

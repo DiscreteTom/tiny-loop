@@ -1,3 +1,3 @@
-mod streaming_cli;
+mod cli;
 
-pub use streaming_cli::*;
+pub use cli::*;
