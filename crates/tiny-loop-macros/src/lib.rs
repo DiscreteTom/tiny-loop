@@ -50,6 +50,40 @@ use quote::quote;
 ///     .bind(db, Database::query);
 /// ```
 ///
+/// ## Custom Tool Name
+///
+/// ```ignore
+/// #[tool(name = "weather_api")]
+/// async fn get_weather(
+///     /// City name
+///     city: String,
+/// ) -> String {
+///     todo!()
+/// }
+///
+/// #[tool]
+/// impl Database {
+///     #[name = "db_query"]
+///     async fn query(self, sql: String) -> String {
+///         todo!()
+///     }
+/// }
+/// ```
+///
+/// ## Serde Attributes
+///
+/// Serde attributes like `#[serde(rename = "...")]` can be applied to parameters:
+///
+/// ```ignore
+/// #[tool]
+/// async fn fetch(
+///     #[serde(rename = "URL")]
+///     url: String,
+/// ) -> String {
+///     todo!()
+/// }
+/// ```
+///
 /// # Macro Expansion
 ///
 /// ## Transform a Function
@@ -127,13 +161,13 @@ use quote::quote;
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn tool(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    tool_impl(item, quote!(tiny_loop::tool::ToolArgs))
+pub fn tool(attr: TokenStream, item: TokenStream) -> TokenStream {
+    tool_impl(attr, item, quote!(tiny_loop::tool::ToolArgs))
 }
 
 /// Same as `#[tool]` but uses internal `ToolArgs` path for use within the `tiny-loop` crate.
 #[doc(hidden)]
 #[proc_macro_attribute]
-pub fn tool_internal(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    tool_impl(item, quote!(crate::tool::ToolArgs))
+pub fn tool_internal(attr: TokenStream, item: TokenStream) -> TokenStream {
+    tool_impl(attr, item, quote!(crate::tool::ToolArgs))
 }

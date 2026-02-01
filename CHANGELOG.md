@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `Agent::tools()` method to get reference to registered tool definitions
+- `#[tool(name = "...")]` attribute to override tool name for functions
+- `#[name = "..."]` attribute to override tool name for methods in `#[tool]` impl blocks
 
 ### Changed
 

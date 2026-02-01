@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, FnArg, ImplItem, ItemFn, ItemImpl, Pat};
+use syn::{parse::Parser, parse_macro_input, FnArg, ImplItem, ItemFn, ItemImpl, Pat};
 
 struct ArgsStruct {
     name: syn::Ident,
@@ -9,18 +9,52 @@ struct ArgsStruct {
     tool_description: String,
 }
 
-pub fn tool_impl(item: TokenStream, trait_path: proc_macro2::TokenStream) -> TokenStream {
+struct ToolAttr {
+    name: Option<String>,
+}
+
+fn parse_tool_attr(attr: TokenStream) -> ToolAttr {
+    if attr.is_empty() {
+        return ToolAttr { name: None };
+    }
+
+    let mut result = ToolAttr { name: None };
+
+    let parser = syn::meta::parser(|meta| {
+        if meta.path.is_ident("name") {
+            let value = meta.value()?;
+            let s: syn::LitStr = value.parse()?;
+            result.name = Some(s.value());
+        }
+        Ok(())
+    });
+
+    let _ = parser.parse(attr);
+    result
+}
+
+pub fn tool_impl(
+    attr: TokenStream,
+    item: TokenStream,
+    trait_path: proc_macro2::TokenStream,
+) -> TokenStream {
+    let tool_attr = parse_tool_attr(attr);
+
     // Try parsing as impl block first
     if let Ok(impl_block) = syn::parse::<ItemImpl>(item.clone()) {
-        return tool_impl_block(impl_block, trait_path);
+        return tool_impl_block(impl_block, trait_path, tool_attr);
     }
 
     // Otherwise parse as function
     let input = parse_macro_input!(item as ItemFn);
-    tool_impl_fn(input, trait_path)
+    tool_impl_fn(input, trait_path, tool_attr)
 }
 
-fn tool_impl_block(mut impl_block: ItemImpl, trait_path: proc_macro2::TokenStream) -> TokenStream {
+fn tool_impl_block(
+    mut impl_block: ItemImpl,
+    trait_path: proc_macro2::TokenStream,
+    _tool_attr: ToolAttr,
+) -> TokenStream {
     let mut args_structs = Vec::new();
 
     for item in &mut impl_block.items {
@@ -30,7 +64,25 @@ fn tool_impl_block(mut impl_block: ItemImpl, trait_path: proc_macro2::TokenStrea
                 return TokenStream::from(err.to_compile_error());
             }
 
-            let args_struct = extract_args_struct(&method.sig, &method.attrs);
+            // Parse name attribute from method attributes and remove it
+            let mut method_name = None;
+            method.attrs.retain(|attr| {
+                if attr.path().is_ident("name") {
+                    if let syn::Meta::NameValue(nv) = &attr.meta {
+                        if let syn::Expr::Lit(lit) = &nv.value {
+                            if let syn::Lit::Str(s) = &lit.lit {
+                                method_name = Some(s.value());
+                            }
+                        }
+                    }
+                    false // Remove the name attribute
+                } else {
+                    true // Keep other attributes
+                }
+            });
+
+            let args_struct =
+                extract_args_struct(&method.sig, &method.attrs, method_name.as_deref());
             let struct_name = &args_struct.name;
             let param_names: Vec<_> = args_struct
                 .fields
@@ -96,8 +148,12 @@ fn tool_impl_block(mut impl_block: ItemImpl, trait_path: proc_macro2::TokenStrea
     TokenStream::from(expanded)
 }
 
-fn tool_impl_fn(mut input: ItemFn, trait_path: proc_macro2::TokenStream) -> TokenStream {
-    let args_struct = extract_args_struct(&input.sig, &input.attrs);
+fn tool_impl_fn(
+    mut input: ItemFn,
+    trait_path: proc_macro2::TokenStream,
+    tool_attr: ToolAttr,
+) -> TokenStream {
+    let args_struct = extract_args_struct(&input.sig, &input.attrs, tool_attr.name.as_deref());
 
     // Validate return type
     if let Err(err) = validate_return_type(&input.sig) {
@@ -159,10 +215,15 @@ fn tool_impl_fn(mut input: ItemFn, trait_path: proc_macro2::TokenStream) -> Toke
     TokenStream::from(expanded)
 }
 
-fn extract_args_struct(sig: &syn::Signature, attrs: &[syn::Attribute]) -> ArgsStruct {
+fn extract_args_struct(
+    sig: &syn::Signature,
+    attrs: &[syn::Attribute],
+    override_name: Option<&str>,
+) -> ArgsStruct {
     let fn_name = &sig.ident;
+    let tool_name = override_name.unwrap_or(&fn_name.to_string()).to_string();
     let struct_name = syn::Ident::new(
-        &format!("{}Args", to_pascal_case(&fn_name.to_string())),
+        &format!("{}Args", to_pascal_case(&tool_name)),
         fn_name.span(),
     );
 
@@ -203,7 +264,7 @@ fn extract_args_struct(sig: &syn::Signature, attrs: &[syn::Attribute]) -> ArgsSt
     ArgsStruct {
         name: struct_name,
         fields,
-        tool_name: fn_name.to_string(),
+        tool_name,
         tool_description: fn_doc,
     }
 }

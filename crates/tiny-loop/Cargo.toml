@@ -11,7 +11,7 @@ keywords = ["ai", "agent", "llm", "openai"]
 categories = ["api-bindings", "asynchronous"]
 
 [dependencies]
-tiny-loop-macros = { version = "0.1.3", path = "../tiny-loop-macros" }
+tiny-loop-macros = { version = "0.1.4", path = "../tiny-loop-macros" }
 anyhow = "1"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
