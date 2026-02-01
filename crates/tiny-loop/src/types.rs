@@ -64,7 +64,7 @@ pub struct FunctionCall {
 }
 
 /// Tool definition for LLM
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Debug)]
 pub struct ToolDefinition {
     /// Type of the tool (typically "function")
     #[serde(rename = "type")]
@@ -74,7 +74,7 @@ pub struct ToolDefinition {
 }
 
 /// Tool function definition
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Debug)]
 pub struct ToolFunction {
     /// Function name
     pub name: String,
