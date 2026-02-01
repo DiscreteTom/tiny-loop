@@ -1,44 +1,64 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// System message body
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SystemMessage {
+    /// Message content
+    pub content: String,
+}
+
+/// User message body
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct UserMessage {
+    /// Message content
+    pub content: String,
+}
+
+/// Assistant message body
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct AssistantMessage {
+    /// Message content
+    pub content: String,
+    /// Tool calls requested by the assistant
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_calls: Option<Vec<ToolCall>>,
+}
+
+/// Tool message body
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ToolMessage {
+    /// Tool execution result content
+    pub content: String,
+    /// ID of the tool call this responds to
+    pub tool_call_id: String,
+}
+
+/// Custom message body
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CustomMessage {
+    /// Custom role name
+    pub role: String,
+    /// Custom message body
+    #[serde(flatten)]
+    pub body: Value,
+}
+
 /// LLM message with role-specific fields
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(tag = "role", rename_all = "lowercase")]
 pub enum Message {
     /// System message with instructions
-    System {
-        /// Message content
-        content: String,
-    },
+    System(SystemMessage),
     /// User message with input
-    User {
-        /// Message content
-        content: String,
-    },
+    User(UserMessage),
     /// Assistant message with response and optional tool calls
-    Assistant {
-        /// Message content
-        content: String,
-        /// Tool calls requested by the assistant
-        #[serde(skip_serializing_if = "Option::is_none")]
-        tool_calls: Option<Vec<ToolCall>>,
-    },
+    Assistant(AssistantMessage),
     /// Tool execution result
-    Tool {
-        /// Tool execution result content
-        content: String,
-        /// ID of the tool call this responds to
-        tool_call_id: String,
-    },
+    Tool(ToolMessage),
     /// Custom role with arbitrary fields
     #[serde(untagged)]
-    Custom {
-        /// Custom role name
-        role: String,
-        /// Custom message body
-        #[serde(flatten)]
-        body: Value,
-    },
+    Custom(CustomMessage),
 }
 
 /// Tool call from LLM
@@ -68,41 +88,41 @@ mod tests {
 
     #[test]
     fn test_system_roundtrip() {
-        let msg = Message::System {
+        let msg = Message::System(SystemMessage {
             content: "test".into(),
-        };
+        });
         let json = serde_json::to_string(&msg).unwrap();
         let parsed: Message = serde_json::from_str(&json).unwrap();
-        assert!(matches!(parsed, Message::System { content } if content == "test"));
+        assert!(matches!(parsed, Message::System(SystemMessage { content }) if content == "test"));
     }
 
     #[test]
     fn test_user_roundtrip() {
-        let msg = Message::User {
+        let msg = Message::User(UserMessage {
             content: "test".into(),
-        };
+        });
         let json = serde_json::to_string(&msg).unwrap();
         let parsed: Message = serde_json::from_str(&json).unwrap();
-        assert!(matches!(parsed, Message::User { content } if content == "test"));
+        assert!(matches!(parsed, Message::User(UserMessage { content }) if content == "test"));
     }
 
     #[test]
     fn test_assistant_no_tools_roundtrip() {
-        let msg = Message::Assistant {
+        let msg = Message::Assistant(AssistantMessage {
             content: "test".into(),
             tool_calls: None,
-        };
+        });
         let json = serde_json::to_string(&msg).unwrap();
         assert!(!json.contains("tool_calls"));
         let parsed: Message = serde_json::from_str(&json).unwrap();
         assert!(
-            matches!(parsed, Message::Assistant { content, tool_calls: None } if content == "test")
+            matches!(parsed, Message::Assistant(AssistantMessage { content, tool_calls: None }) if content == "test")
         );
     }
 
     #[test]
     fn test_assistant_with_tools_roundtrip() {
-        let msg = Message::Assistant {
+        let msg = Message::Assistant(AssistantMessage {
             content: "test".into(),
             tool_calls: Some(vec![ToolCall {
                 id: "call_1".into(),
@@ -112,35 +132,37 @@ mod tests {
                     arguments: "{}".into(),
                 },
             }]),
-        };
+        });
         let json = serde_json::to_string(&msg).unwrap();
         let parsed: Message = serde_json::from_str(&json).unwrap();
         assert!(
-            matches!(parsed, Message::Assistant { tool_calls: Some(calls), .. } if calls.len() == 1)
+            matches!(parsed, Message::Assistant(AssistantMessage { tool_calls: Some(calls), .. }) if calls.len() == 1)
         );
     }
 
     #[test]
     fn test_tool_roundtrip() {
-        let msg = Message::Tool {
+        let msg = Message::Tool(ToolMessage {
             content: "result".into(),
             tool_call_id: "call_123".into(),
-        };
+        });
         let json = serde_json::to_string(&msg).unwrap();
         let parsed: Message = serde_json::from_str(&json).unwrap();
-        assert!(matches!(parsed, Message::Tool { content, tool_call_id }
-            if content == "result" && tool_call_id == "call_123"));
+        assert!(
+            matches!(parsed, Message::Tool(ToolMessage { content, tool_call_id })
+            if content == "result" && tool_call_id == "call_123")
+        );
     }
 
     #[test]
     fn test_custom_roundtrip() {
-        let msg = Message::Custom {
+        let msg = Message::Custom(CustomMessage {
             role: "custom".into(),
             body: serde_json::json!({"content": "test", "extra": "field"}),
-        };
+        });
         let json = serde_json::to_string(&msg).unwrap();
         let parsed: Message = serde_json::from_str(&json).unwrap();
-        assert!(matches!(parsed, Message::Custom { role, .. } if role == "custom"));
+        assert!(matches!(parsed, Message::Custom(CustomMessage { role, .. }) if role == "custom"));
     }
 
     #[test]

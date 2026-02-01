@@ -46,9 +46,11 @@ impl ToolExecutor for ParallelExecutor {
                 tracing::debug!("Tool '{}' not found", name);
                 calls
                     .into_iter()
-                    .map(|call| Message::Tool {
-                        tool_call_id: call.id,
-                        content: format!("Tool '{}' not found", name),
+                    .map(|call| {
+                        Message::Tool(crate::types::ToolMessage {
+                            tool_call_id: call.id,
+                            content: format!("Tool '{}' not found", name),
+                        })
                     })
                     .collect()
             }

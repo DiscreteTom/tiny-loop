@@ -388,14 +388,14 @@ impl OpenAIProvider {
 
         tracing::debug!("Streaming completed, total length: {}", content.len());
         Ok(LLMResponse {
-            message: Message::Assistant {
+            message: Message::Assistant(crate::types::AssistantMessage {
                 content,
                 tool_calls: if tool_calls.is_empty() {
                     None
                 } else {
                     Some(tool_calls)
                 },
-            },
+            }),
             finish_reason,
         })
     }

@@ -32,16 +32,16 @@ impl ToolExecutor for SequentialExecutor {
         for call in calls {
             tracing::debug!("Executing tool '{}'", call.function.name);
             let message = if let Some(tool) = self.tools.get(&call.function.name) {
-                Message::Tool {
+                Message::Tool(crate::types::ToolMessage {
                     tool_call_id: call.id.clone(),
                     content: tool.call(call.function.arguments).await,
-                }
+                })
             } else {
                 tracing::debug!("Tool '{}' not found", call.function.name);
-                Message::Tool {
+                Message::Tool(crate::types::ToolMessage {
                     tool_call_id: call.id,
                     content: format!("Tool '{}' not found", call.function.name),
-                }
+                })
             };
             results.push(message);
         }

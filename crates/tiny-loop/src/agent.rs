@@ -69,9 +69,10 @@ impl Agent {
     ///     .system("You are a helpful assistant");
     /// ```
     pub fn system(mut self, content: impl Into<String>) -> Self {
-        self.history.add(Message::System {
-            content: content.into(),
-        });
+        self.history
+            .add(Message::System(crate::types::SystemMessage {
+                content: content.into(),
+            }));
         self
     }
 
@@ -271,14 +272,12 @@ impl Agent {
             self.history.add(response.message.clone());
 
             // Execute tool calls if any
-            if let Message::Assistant {
-                tool_calls: Some(calls),
-                ..
-            } = &response.message
-            {
-                tracing::debug!("Executing {} tool calls", calls.len());
-                let results = self.executor.execute(calls.clone()).await;
-                self.history.add_batch(results);
+            if let Message::Assistant(msg) = &response.message {
+                if let Some(calls) = &msg.tool_calls {
+                    tracing::debug!("Executing {} tool calls", calls.len());
+                    let results = self.executor.execute(calls.clone()).await;
+                    self.history.add_batch(results);
+                }
             }
 
             // Break loop if finish reason is not tool_calls
@@ -290,8 +289,8 @@ impl Agent {
                     "Agent loop completed, finish_reason: {:?}",
                     response.finish_reason
                 );
-                if let Message::Assistant { content, .. } = response.message {
-                    return Ok(content);
+                if let Message::Assistant(msg) = response.message {
+                    return Ok(msg.content);
                 }
                 return Ok(String::new());
             }
@@ -303,7 +302,8 @@ impl Agent {
     pub async fn chat(&mut self, prompt: impl Into<String>) -> anyhow::Result<String> {
         let prompt = prompt.into();
         tracing::debug!("Chat request, prompt length: {}", prompt.len());
-        self.history.add(Message::User { content: prompt });
+        self.history
+            .add(Message::User(crate::types::UserMessage { content: prompt }));
         self.run().await
     }
 }
