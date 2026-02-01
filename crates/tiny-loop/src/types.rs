@@ -2,6 +2,18 @@ use schemars::{JsonSchema, generate::SchemaSettings};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
+/// Finish reason for LLM completion
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "snake_case")]
+pub enum FinishReason {
+    Stop,
+    Length,
+    ToolCalls,
+    ContentFilter,
+    #[serde(untagged)]
+    Custom(String),
+}
+
 /// LLM message with role-specific fields
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(tag = "role", rename_all = "lowercase")]

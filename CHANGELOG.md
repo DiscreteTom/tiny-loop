@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `FinishReason` enum in `types` module
+- `LLMResponse` struct containing `message` and `finish_reason`
+
+### Changed
+
+- **Breaking**: `LLMProvider::call` now returns `LLMResponse` instead of `Message`
+
 ### Removed
 
 - **Breaking**: `OpenAIProvider::temperature()` and `OpenAIProvider::max_tokens()` methods (use `body()` instead)

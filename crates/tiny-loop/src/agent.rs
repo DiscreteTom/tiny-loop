@@ -259,7 +259,7 @@ impl Agent {
         tracing::debug!("Starting agent loop");
         loop {
             tracing::trace!("Calling LLM with {} messages", self.history.get_all().len());
-            let message = self
+            let response = self
                 .llm
                 .call(
                     self.history.get_all(),
@@ -268,9 +268,9 @@ impl Agent {
                 )
                 .await?;
 
-            self.history.add(message.clone());
+            self.history.add(response.message.clone());
 
-            match message {
+            match response.message {
                 Message::Assistant {
                     tool_calls: Some(calls),
                     ..

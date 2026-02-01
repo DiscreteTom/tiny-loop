@@ -1,4 +1,4 @@
-use crate::types::{Message, ToolDefinition};
+use crate::types::{FinishReason, Message, ToolDefinition};
 use async_trait::async_trait;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
@@ -35,6 +35,8 @@ struct StreamChunk {
 #[derive(Deserialize)]
 struct StreamChoice {
     delta: Delta,
+    #[serde(default)]
+    finish_reason: Option<FinishReason>,
 }
 
 /// Delta content in streaming
@@ -51,6 +53,8 @@ struct Delta {
 struct Choice {
     /// Assistant's response message
     message: Message,
+    /// Reason the completion finished
+    finish_reason: FinishReason,
 }
 
 /// OpenAI-compatible LLM provider
@@ -249,7 +253,7 @@ impl super::LLMProvider for OpenAIProvider {
         messages: &[Message],
         tools: &[ToolDefinition],
         mut stream_callback: Option<&mut super::StreamCallback>,
-    ) -> anyhow::Result<Message> {
+    ) -> anyhow::Result<super::LLMResponse> {
         let mut attempt = 0;
         loop {
             attempt += 1;
@@ -267,7 +271,7 @@ impl super::LLMProvider for OpenAIProvider {
                 .call_once(messages, tools, stream_callback.as_deref_mut())
                 .await
             {
-                Ok(message) => return Ok(message),
+                Ok(response) => return Ok(response),
                 Err(e) if attempt > self.max_retries => {
                     tracing::debug!("Max retries exceeded");
                     return Err(e);
@@ -288,7 +292,7 @@ impl OpenAIProvider {
         messages: &[Message],
         tools: &[ToolDefinition],
         stream_callback: Option<&mut super::StreamCallback>,
-    ) -> anyhow::Result<Message> {
+    ) -> anyhow::Result<super::LLMResponse> {
         let request = ChatRequest {
             model: self.model.clone(),
             messages: messages.to_vec(),
@@ -329,7 +333,11 @@ impl OpenAIProvider {
             let chat_response: ChatResponse = serde_json::from_str(&body)
                 .map_err(|e| anyhow::anyhow!("Failed to parse response: {}. Body: {}", e, body))?;
             tracing::debug!("LLM API call completed successfully");
-            Ok(chat_response.choices[0].message.clone())
+            let choice = &chat_response.choices[0];
+            Ok(super::LLMResponse {
+                message: choice.message.clone(),
+                finish_reason: choice.finish_reason.clone(),
+            })
         }
     }
 
@@ -337,13 +345,14 @@ impl OpenAIProvider {
         &self,
         response: reqwest::Response,
         callback: &mut super::StreamCallback,
-    ) -> anyhow::Result<Message> {
+    ) -> anyhow::Result<super::LLMResponse> {
         use futures::TryStreamExt;
 
         let mut stream = response.bytes_stream();
         let mut buffer = String::new();
         let mut content = String::new();
         let mut tool_calls = Vec::new();
+        let mut finish_reason = FinishReason::Stop;
 
         while let Some(chunk) = stream.try_next().await? {
             buffer.push_str(&String::from_utf8_lossy(&chunk));
@@ -367,6 +376,10 @@ impl OpenAIProvider {
                             if let Some(delta_tool_calls) = &choice.delta.tool_calls {
                                 tool_calls.extend(delta_tool_calls.clone());
                             }
+
+                            if let Some(reason) = &choice.finish_reason {
+                                finish_reason = reason.clone();
+                            }
                         }
                     }
                 }
@@ -374,13 +387,16 @@ impl OpenAIProvider {
         }
 
         tracing::debug!("Streaming completed, total length: {}", content.len());
-        Ok(Message::Assistant {
-            content,
-            tool_calls: if tool_calls.is_empty() {
-                None
-            } else {
-                Some(tool_calls)
+        Ok(super::LLMResponse {
+            message: Message::Assistant {
+                content,
+                tool_calls: if tool_calls.is_empty() {
+                    None
+                } else {
+                    Some(tool_calls)
+                },
             },
+            finish_reason,
         })
     }
 }

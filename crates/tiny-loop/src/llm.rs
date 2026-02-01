@@ -1,12 +1,19 @@
 mod openai;
 
-use crate::types::{Message, ToolDefinition};
+use crate::types::{FinishReason, Message, ToolDefinition};
 use async_trait::async_trait;
 
 pub use openai::*;
 
 /// Callback for streaming LLM responses
 pub type StreamCallback = Box<dyn FnMut(String) + Send>;
+
+/// LLM response containing message and finish reason
+#[derive(Debug, Clone)]
+pub struct LLMResponse {
+    pub message: Message,
+    pub finish_reason: FinishReason,
+}
 
 /// LLM provider trait for making API calls
 #[async_trait]
@@ -20,5 +27,5 @@ pub trait LLMProvider: Send + Sync {
         messages: &[Message],
         tools: &[ToolDefinition],
         stream_callback: Option<&mut StreamCallback>,
-    ) -> anyhow::Result<Message>;
+    ) -> anyhow::Result<LLMResponse>;
 }
