@@ -14,7 +14,7 @@ Minimal AI agent framework in Rust.
 - [History management](./crates/tiny-loop/examples/history.rs)
 - [Streaming](./crates/tiny-loop/examples/chatbot.rs)
 - [Custom loop control](./crates/tiny-loop/examples/custom_loop.rs)
-- Parallel tool execution
+- [Parallel tool execution](https://docs.rs/tiny-loop/latest/tiny_loop/tool/struct.ParallelExecutor.html)
 - Observability via [`tracing`](https://docs.rs/tracing/latest/tracing/)
 
 ## Installation

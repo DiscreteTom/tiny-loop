@@ -7,11 +7,35 @@ use crate::{
 use async_trait::async_trait;
 
 /// Executes tools sequentially one by one by using [`Tool::call`]
+///
+/// # How it works
+///
+/// 1. Iterates through tool calls in order
+/// 2. Executes each call one at a time using [`Tool::call`]
+/// 3. Waits for each call to complete before starting the next
+///
+/// # Example
+///
+/// Given tool calls:
+/// ```text
+/// [
+///   ToolCall { id: "1", function: { name: "weather", ... } },
+///   ToolCall { id: "2", function: { name: "search", ... } },
+///   ToolCall { id: "3", function: { name: "weather", ... } },
+/// ]
+/// ```
+///
+/// The executor will:
+/// 1. Execute `weather_tool.call(call1)` and wait for completion
+/// 2. Execute `search_tool.call(call2)` and wait for completion
+/// 3. Execute `weather_tool.call(call3)` and wait for completion
+/// 4. Return results in order: `[result1, result2, result3]`
 pub struct SequentialExecutor {
     tools: HashMap<String, Box<dyn Tool + Sync>>,
 }
 
 impl SequentialExecutor {
+    /// Create a new sequential executor
     pub fn new() -> Self {
         Self {
             tools: HashMap::new(),

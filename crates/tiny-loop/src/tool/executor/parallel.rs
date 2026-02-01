@@ -7,11 +7,36 @@ use futures::future::join_all;
 use std::collections::HashMap;
 
 /// Executes tools in parallel by grouping calls by tool name and using [`Tool::call_batch`]
+///
+/// # How it works
+///
+/// 1. Groups tool calls by tool name
+/// 2. Executes each group in parallel using [`Tool::call_batch`]
+/// 3. Flattens and returns all results
+///
+/// # Example
+///
+/// Given tool calls:
+/// ```text
+/// [
+///   ToolCall { id: "1", function: { name: "weather", ... } },
+///   ToolCall { id: "2", function: { name: "search", ... } },
+///   ToolCall { id: "3", function: { name: "weather", ... } },
+/// ]
+/// ```
+///
+/// The executor will:
+/// 1. Group by name: `{ "weather": [call1, call3], "search": [call2] }`
+/// 2. Execute in parallel:
+///    - `weather_tool.call_batch([call1, call3])` (runs concurrently)
+///    - `search_tool.call_batch([call2])` (runs concurrently)
+/// 3. Return flattened results: `[result1, result3, result2]`
 pub struct ParallelExecutor {
     tools: HashMap<String, Box<dyn Tool + Sync>>,
 }
 
 impl ParallelExecutor {
+    /// Create a new parallel executor
     pub fn new() -> Self {
         Self {
             tools: HashMap::new(),
