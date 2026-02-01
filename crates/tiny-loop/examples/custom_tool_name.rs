@@ -6,6 +6,7 @@ async fn my_function(#[serde(rename = "customParam")] param: String) -> String {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 struct MyService;
 
 #[tool]
