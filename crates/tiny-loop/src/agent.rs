@@ -69,10 +69,12 @@ impl Agent {
     ///     .system("You are a helpful assistant");
     /// ```
     pub fn system(mut self, content: impl Into<String>) -> Self {
-        self.history
-            .add(Message::System(crate::types::SystemMessage {
+        self.history.add(
+            crate::types::SystemMessage {
                 content: content.into(),
-            }));
+            }
+            .into(),
+        );
         self
     }
 
@@ -269,15 +271,14 @@ impl Agent {
                 )
                 .await?;
 
-            self.history
-                .add(Message::Assistant(response.message.clone()));
+            self.history.add(response.message.clone().into());
 
             // Execute tool calls if any
             if let Some(calls) = &response.message.tool_calls {
                 tracing::debug!("Executing {} tool calls", calls.len());
                 let results = self.executor.execute(calls.clone()).await;
                 self.history
-                    .add_batch(results.into_iter().map(Message::Tool).collect());
+                    .add_batch(results.into_iter().map(|m| m.into()).collect());
             }
 
             // Break loop if finish reason is not tool_calls
@@ -300,7 +301,7 @@ impl Agent {
         let prompt = prompt.into();
         tracing::debug!("Chat request, prompt length: {}", prompt.len());
         self.history
-            .add(Message::User(crate::types::UserMessage { content: prompt }));
+            .add(crate::types::UserMessage { content: prompt }.into());
         self.run().await
     }
 }

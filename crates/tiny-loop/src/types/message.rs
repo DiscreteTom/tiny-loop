@@ -61,6 +61,36 @@ pub enum Message {
     Custom(CustomMessage),
 }
 
+impl From<SystemMessage> for Message {
+    fn from(msg: SystemMessage) -> Self {
+        Message::System(msg)
+    }
+}
+
+impl From<UserMessage> for Message {
+    fn from(msg: UserMessage) -> Self {
+        Message::User(msg)
+    }
+}
+
+impl From<AssistantMessage> for Message {
+    fn from(msg: AssistantMessage) -> Self {
+        Message::Assistant(msg)
+    }
+}
+
+impl From<ToolMessage> for Message {
+    fn from(msg: ToolMessage) -> Self {
+        Message::Tool(msg)
+    }
+}
+
+impl From<CustomMessage> for Message {
+    fn from(msg: CustomMessage) -> Self {
+        Message::Custom(msg)
+    }
+}
+
 /// Tool call from LLM
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ToolCall {
