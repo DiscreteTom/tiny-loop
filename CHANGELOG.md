@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Unused `html2md` dependency
+- Unused `tokio::fs` feature
+
 ## [0.2.0] - 2026-02-01
 
 ### Added
