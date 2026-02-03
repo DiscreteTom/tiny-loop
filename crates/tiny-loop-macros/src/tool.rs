@@ -229,16 +229,17 @@ fn extract_args_struct(
 
     let fn_doc = attrs
         .iter()
-        .find(|attr| attr.path().is_ident("doc"))
-        .and_then(|attr| attr.meta.require_name_value().ok())
-        .and_then(|nv| match &nv.value {
+        .filter(|attr| attr.path().is_ident("doc"))
+        .filter_map(|attr| attr.meta.require_name_value().ok())
+        .filter_map(|nv| match &nv.value {
             syn::Expr::Lit(lit) => match &lit.lit {
                 syn::Lit::Str(s) => Some(s.value().trim().to_string()),
                 _ => None,
             },
             _ => None,
         })
-        .unwrap_or_default();
+        .collect::<Vec<_>>()
+        .join("\n");
 
     let fields: syn::punctuated::Punctuated<syn::Field, syn::token::Comma> = sig
         .inputs

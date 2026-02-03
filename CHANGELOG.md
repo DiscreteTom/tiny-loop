@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `#[tool]` macro now correctly includes all lines of multi-line doc comments in tool and parameter descriptions
+
 ## [0.3.0] - 2026-02-01
 
 ### Added
