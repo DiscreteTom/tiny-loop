@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-07
+
 ### Added
 
 - `TimedMessage` struct wrapping `Message` with `timestamp: SystemTime` and `elapsed: Duration`
@@ -139,7 +141,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tracing instrumentation
 - Built-in tools: `fetch` and `read`
 
-[Unreleased]: https://github.com/DiscreteTom/tiny-loop/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/DiscreteTom/tiny-loop/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/DiscreteTom/tiny-loop/releases/tag/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/DiscreteTom/tiny-loop/releases/tag/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/DiscreteTom/tiny-loop/releases/tag/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/DiscreteTom/tiny-loop/releases/tag/v0.2.0...v0.2.1
