@@ -1,0 +1,210 @@
+# LLM provider configuration
+[llm]
+# OpenAI compatible API base URL
+base_url = "https://openrouter.ai/api/v1"
+# LLM model name
+model = "google/gemini-3-flash-preview"
+
+# Custom HTTP headers (optional)
+[llm.headers]
+HTTP-Referer = "https://github.com/firekeeper-ai/firekeeper"
+X-Title = "firekeeper.ai"
+
+# Custom request body fields (optional)
+[llm.body]
+parallel_tool_calls = true
+
+# Code review configuration
+[review]
+# Maximum number of files to review per task
+max_files_per_task = 5
+# Global resources to include in review context.
+# Supported formats:
+# - `file://glob` - Include matched files' full text, e.g. `file://**/README.md`
+# - `sh://command` - Include command output, e.g. `sh://git ls-files`
+# - `skill://glob` - Include matched skills, e.g. `skill://~/skills/**/SKILL.md`
+resources = ["file://README.md"]
+# Maximum number of parallel workers (optional, defaults to unlimited)
+# max_parallel_workers = ...
+
+# Code review rules
+[[rules]]
+# Human-readable rule name, invisible to LLM
+name = "No Code Duplication"
+# Human-readable description, invisible to LLM (optional)
+description = "Prevent duplicate code across files"
+# Detailed instructions for the LLM on how to check this rule
+instruction = """
+Check if modified code duplicates existing code in other files.
+
+Steps:
+1. Read focused files to understand the modified logic
+2. Search for similar code patterns in other files
+3. Report violations if substantial duplication is found
+
+Violation criteria - Report if:
+- Business logic duplicated across files (>30 lines of similar code)
+- Complex algorithms or calculations repeated identically
+- Data transformation logic that's the same in multiple places
+- Functions that could be extracted into shared utilities
+
+Exemptions - Do NOT report:
+- Trivial code (one-liners, common patterns like error handling)
+- Test code and test utilities
+- Similar but contextually different logic (e.g., different validation rules)
+- Common patterns (builder methods, getters/setters)
+- Standard boilerplate (CLI parsing, config loading)
+- Factory methods or templates with intentional configuration duplication
+"""
+# Glob patterns to match files this rule applies to (optional, defaults to ["**/*"])
+scope = ["**/*"]
+# Glob patterns to exclude files from this rule (optional, defaults to [])
+exclude = [
+  "**/*.md",
+  "**/*.toml",
+  "**/*.json",
+  "**/*.yaml",
+  "**/*.yml",
+  "**/*.xml",
+  "**/*.ini",
+  "**/*.cfg",
+  "**/*.conf",
+  "**/*.lock",
+  "**/*ignore",
+]
+# Maximum number of files to review per task (optional, overrides global config).
+# Increase for simple rules that only check changed files (e.g. scan for hardcoded credentials).
+# Decrease for complex rules that scan many additional files (e.g. documentation sync).
+max_files_per_task = 3
+# Whether violations should block the pipeline (exit 1) (optional, defaults to true)
+blocking = true
+# Tip for downstream processors (e.g. coding agents) to fix violations (optional)
+tip = """
+Extract common code into shared functions or modules.
+"""
+# Rule-specific resources to include in review context.
+# Supported formats:
+# - `file://glob` - Include matched files' full text, e.g. `file://**/README.md`
+# - `sh://command` - Include command output, e.g. `sh://git ls-files`
+# - `skill://glob` - Include matched skills, e.g. `skill://~/skills/**/SKILL.md`
+resources = ["sh://git ls-files"]
+
+# Code review rules
+[[rules]]
+# Human-readable rule name, invisible to LLM
+name = "No Magic Numbers"
+# Human-readable description, invisible to LLM (optional)
+description = "Prevent hardcoded numeric literals"
+# Detailed instructions for the LLM on how to check this rule
+instruction = """
+Only read the focused files. Don't read any other files.
+
+Check for unexplained numeric literals in diff.
+
+Steps:
+1. Read focused files and identify numeric literals
+2. Check if numbers have explanatory comments or clear context
+3. Report violations for unexplained numbers
+
+Violation criteria - Report if:
+- Business logic constants without explanation (thresholds, multipliers, limits)
+- Arbitrary timeouts or delays without context
+- Numeric configuration values hardcoded in logic without comments
+- Calculation constants without explanation
+
+Exemptions - Do NOT report:
+- 0, 1, -1 in common contexts (indexing, loops, exit codes, boolean-like)
+- Numbers in test files
+- Numbers in configuration files
+- Numbers with nearby comments (within 3 lines above or inline)
+- Numbers in default value functions with descriptive context
+- HTTP status codes (200, 404, etc.)
+- Common time values with clear context (60 for seconds, 24 for hours, 1000 for ms)
+- Array/collection sizes in obvious contexts
+"""
+# Glob patterns to match files this rule applies to (optional, defaults to ["**/*"])
+scope = ["**/*"]
+# Glob patterns to exclude files from this rule (optional, defaults to [])
+exclude = [
+  "**/*.md",
+  "**/*.toml",
+  "**/*.json",
+  "**/*.yaml",
+  "**/*.yml",
+  "**/*.xml",
+  "**/*.ini",
+  "**/*.cfg",
+  "**/*.conf",
+  "**/*.lock",
+  "**/*ignore",
+]
+# Maximum number of files to review per task (optional, overrides global config).
+# Increase for simple rules that only check changed files (e.g. scan for hardcoded credentials).
+# Decrease for complex rules that scan many additional files (e.g. documentation sync).
+max_files_per_task = 10
+# Whether violations should block the pipeline (exit 1) (optional, defaults to true)
+blocking = true
+# Tip for downstream processors (e.g. coding agents) to fix violations (optional)
+tip = """
+Define constants with descriptive names or add explanatory comments.
+"""
+# Rule-specific resources to include in review context.
+# Supported formats:
+# - `file://glob` - Include matched files' full text, e.g. `file://**/README.md`
+# - `sh://command` - Include command output, e.g. `sh://git ls-files`
+# - `skill://glob` - Include matched skills, e.g. `skill://~/skills/**/SKILL.md`
+resources = []
+
+# Code review rules
+[[rules]]
+# Human-readable rule name, invisible to LLM
+name = "No Hardcoded Credentials"
+# Human-readable description, invisible to LLM (optional)
+description = "Prevent credential leaks"
+# Detailed instructions for the LLM on how to check this rule
+instruction = """
+Only read the focused files. Don't read any other files.
+
+Check for hardcoded credentials in diff.
+
+Steps:
+1. Read focused files and scan for credential-like strings
+2. Determine if they are real credentials or placeholders
+3. Report violations for any real credentials found
+
+Violation criteria - Report if ANY found:
+- API keys, tokens, secrets (e.g., "sk-...", "Bearer ...", actual secret values)
+- Passwords or password hashes
+- Private keys or certificates
+- OAuth client secrets
+- Database connection strings with credentials
+
+Exemptions - Do NOT report:
+- Placeholder/example values (e.g., "your-api-key", "sk-xxxxxx", "<API_KEY>")
+- Environment variable names (e.g., "API_KEY", "DATABASE_URL")
+- Public URLs and endpoints
+- Email addresses and contact information
+- Test/mock credentials in test files clearly marked as fake
+- Documentation examples with obvious placeholders
+"""
+# Glob patterns to match files this rule applies to (optional, defaults to ["**/*"])
+scope = ["**/*"]
+# Glob patterns to exclude files from this rule (optional, defaults to [])
+exclude = []
+# Maximum number of files to review per task (optional, overrides global config).
+# Increase for simple rules that only check changed files (e.g. scan for hardcoded credentials).
+# Decrease for complex rules that scan many additional files (e.g. documentation sync).
+max_files_per_task = 10
+# Whether violations should block the pipeline (exit 1) (optional, defaults to true)
+blocking = true
+# Tip for downstream processors (e.g. coding agents) to fix violations (optional)
+tip = """
+Use environment variables or configuration files for credentials.
+Replace real values with placeholders in examples.
+"""
+# Rule-specific resources to include in review context.
+# Supported formats:
+# - `file://glob` - Include matched files' full text, e.g. `file://**/README.md`
+# - `sh://command` - Include command output, e.g. `sh://git ls-files`
+# - `skill://glob` - Include matched skills, e.g. `skill://~/skills/**/SKILL.md`
+resources = []
