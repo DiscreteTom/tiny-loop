@@ -114,7 +114,7 @@ pub struct FunctionCall {
 }
 
 /// Message with timing metadata
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TimedMessage {
     pub message: Message,
     /// When the message was created
@@ -124,7 +124,7 @@ pub struct TimedMessage {
 }
 
 /// Tool execution result with timing metadata
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ToolResult {
     pub tool_message: ToolMessage,
     /// When the tool execution started

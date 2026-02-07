@@ -14,7 +14,7 @@ pub enum FinishReason {
 }
 
 /// LLM response containing message and finish reason
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LLMResponse {
     pub message: AssistantMessage,
     pub finish_reason: FinishReason,

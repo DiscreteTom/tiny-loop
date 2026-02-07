@@ -1,9 +1,9 @@
 use schemars::{JsonSchema, generate::SchemaSettings};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 /// Tool definition for LLM
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ToolDefinition {
     /// Type of the tool (typically "function")
     #[serde(rename = "type")]
@@ -13,7 +13,7 @@ pub struct ToolDefinition {
 }
 
 /// Tool function definition
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ToolFunction {
     /// Function name
     pub name: String,
@@ -24,7 +24,7 @@ pub struct ToolFunction {
 }
 
 /// JSON schema parameters with metadata stripped
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Parameters(Map<String, Value>);
 
 impl Parameters {
