@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::time::{Duration, SystemTime};
 
 /// System message body
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -110,6 +111,26 @@ pub struct FunctionCall {
     pub name: String,
     /// JSON-encoded function arguments
     pub arguments: String,
+}
+
+/// Message with timing metadata
+#[derive(Clone, Debug)]
+pub struct TimedMessage {
+    pub message: Message,
+    /// When the message was created
+    pub timestamp: SystemTime,
+    /// Time taken to generate this message
+    pub elapsed: Duration,
+}
+
+/// Tool execution result with timing metadata
+#[derive(Clone, Debug)]
+pub struct ToolResult {
+    pub tool_message: ToolMessage,
+    /// When the tool execution started
+    pub timestamp: SystemTime,
+    /// Time taken to execute the tool
+    pub elapsed: Duration,
 }
 
 #[cfg(test)]

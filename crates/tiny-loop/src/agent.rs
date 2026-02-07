@@ -49,12 +49,14 @@ impl Agent {
     ///     .system("You are a helpful assistant");
     /// ```
     pub fn system(mut self, content: impl Into<String>) -> Self {
-        self.history.add(
-            crate::types::SystemMessage {
+        self.history.add(crate::types::TimedMessage {
+            message: crate::types::SystemMessage {
                 content: content.into(),
             }
             .into(),
-        );
+            timestamp: std::time::SystemTime::now(),
+            elapsed: std::time::Duration::ZERO,
+        });
         self
     }
 
@@ -270,16 +272,37 @@ impl Agent {
     /// ```
     pub async fn step(&mut self) -> anyhow::Result<Option<String>> {
         tracing::trace!("Calling LLM with {} messages", self.history.get_all().len());
-        let response = self.llm.call(self.history.get_all(), &self.tools).await?;
 
-        self.history.add(response.message.clone().into());
+        let messages: Vec<_> = self
+            .history
+            .get_all()
+            .iter()
+            .map(|tm| tm.message.clone())
+            .collect();
+        let start = std::time::SystemTime::now();
+        let response = self.llm.call(&messages, &self.tools).await?;
+        let elapsed = start.elapsed().unwrap();
+
+        self.history.add(crate::types::TimedMessage {
+            message: response.message.clone().into(),
+            timestamp: start,
+            elapsed,
+        });
 
         // Execute tool calls if any
         if let Some(calls) = &response.message.tool_calls {
             tracing::debug!("Executing {} tool calls", calls.len());
             let results = self.executor.execute(calls.clone()).await;
-            self.history
-                .add_batch(results.into_iter().map(|m| m.into()).collect());
+            self.history.add_batch(
+                results
+                    .into_iter()
+                    .map(|r| crate::types::TimedMessage {
+                        message: r.tool_message.into(),
+                        timestamp: r.timestamp,
+                        elapsed: r.elapsed,
+                    })
+                    .collect(),
+            );
         }
 
         // Break loop if finish reason is not tool_calls
@@ -313,8 +336,11 @@ impl Agent {
     pub async fn chat(&mut self, prompt: impl Into<String>) -> anyhow::Result<String> {
         let prompt = prompt.into();
         tracing::debug!("Chat request, prompt length: {}", prompt.len());
-        self.history
-            .add(crate::types::UserMessage { content: prompt }.into());
+        self.history.add(crate::types::TimedMessage {
+            message: crate::types::UserMessage { content: prompt }.into(),
+            timestamp: std::time::SystemTime::now(),
+            elapsed: std::time::Duration::ZERO,
+        });
         self.run().await
     }
 }

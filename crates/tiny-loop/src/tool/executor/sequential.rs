@@ -50,24 +50,17 @@ impl ToolExecutor for SequentialExecutor {
         self.tools.insert(name, tool)
     }
 
-    async fn execute(&self, calls: Vec<ToolCall>) -> Vec<crate::types::ToolMessage> {
+    async fn execute(&self, calls: Vec<ToolCall>) -> Vec<crate::types::ToolResult> {
         tracing::debug!("Executing {} tool calls sequentially", calls.len());
         let mut results = Vec::new();
         for call in calls {
             tracing::debug!("Executing tool '{}'", call.function.name);
-            let message = if let Some(tool) = self.tools.get(&call.function.name) {
-                crate::types::ToolMessage {
-                    tool_call_id: call.id.clone(),
-                    content: tool.call(call.function.arguments).await,
-                }
+            if let Some(tool) = self.tools.get(&call.function.name) {
+                results.push(tool.call_timed(call).await);
             } else {
                 tracing::debug!("Tool '{}' not found", call.function.name);
-                crate::types::ToolMessage {
-                    tool_call_id: call.id,
-                    content: format!("Tool '{}' not found", call.function.name),
-                }
-            };
-            results.push(message);
+                results.push(super::tool_not_found_result(call.id, &call.function.name));
+            }
         }
         tracing::debug!("Sequential execution completed");
         results

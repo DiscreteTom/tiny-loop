@@ -1,9 +1,9 @@
 use super::History;
-use crate::types::Message;
+use crate::types::TimedMessage;
 
 /// Infinite history - never cleans history
 pub struct InfiniteHistory {
-    messages: Vec<Message>,
+    messages: Vec<TimedMessage>,
 }
 
 impl InfiniteHistory {
@@ -21,11 +21,11 @@ impl Default for InfiniteHistory {
 }
 
 impl History for InfiniteHistory {
-    fn add(&mut self, message: Message) {
+    fn add(&mut self, message: TimedMessage) {
         self.messages.push(message);
     }
 
-    fn get_all(&self) -> &[Message] {
+    fn get_all(&self) -> &[TimedMessage] {
         &self.messages
     }
 }

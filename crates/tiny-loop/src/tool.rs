@@ -2,7 +2,7 @@ mod args;
 mod closure;
 mod executor;
 
-use crate::types::{ToolCall, ToolMessage};
+use crate::types::{ToolCall, ToolResult};
 use async_trait::async_trait;
 use futures::future::join_all;
 
@@ -21,14 +21,26 @@ pub trait Tool {
     /// Calls the tool with JSON arguments and returns the result.
     async fn call(&self, args: String) -> String;
 
+    /// Calls the tool with timing measurement
+    async fn call_timed(&self, call: ToolCall) -> ToolResult {
+        let start = std::time::SystemTime::now();
+        let content = self.call(call.function.arguments).await;
+        let elapsed = start.elapsed().unwrap();
+        ToolResult {
+            tool_message: crate::types::ToolMessage {
+                tool_call_id: call.id,
+                content,
+            },
+            timestamp: start,
+            elapsed,
+        }
+    }
+
     /// Executes multiple tool calls in parallel. Override to customize execution behavior.
-    async fn call_batch(&self, args: Vec<ToolCall>) -> Vec<ToolMessage> {
+    async fn call_batch(&self, args: Vec<ToolCall>) -> Vec<ToolResult> {
         join_all(
             args.into_iter()
-                .map(async |call| ToolMessage {
-                    tool_call_id: call.id,
-                    content: self.call(call.function.arguments).await,
-                })
+                .map(|call| self.call_timed(call))
                 .collect::<Vec<_>>(),
         )
         .await

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `TimedMessage` struct wrapping `Message` with `timestamp: SystemTime` and `elapsed: Duration`
+- `ToolResult` struct wrapping `ToolMessage` with `timestamp: SystemTime` and `elapsed: Duration`
+- `Tool::call_timed()` method with default implementation for timing measurement
+
+### Changed
+
+- **Breaking**: `History` trait now stores and returns `TimedMessage` instead of `Message`
+- **Breaking**: `ToolExecutor::execute()` now returns `Vec<ToolResult>` instead of `Vec<ToolMessage>`
+- **Breaking**: `Tool::call_batch()` now returns `Vec<ToolResult>` instead of `Vec<ToolMessage>`
+- `Agent::step()` now records timing for assistant messages and tool executions
+- `InfiniteHistory` now stores `TimedMessage`
+
 ## [0.3.1] - 2026-02-03
 
 ### Fixed

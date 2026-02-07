@@ -51,7 +51,7 @@ impl ToolExecutor for ParallelExecutor {
         self.tools.insert(name, tool)
     }
 
-    async fn execute(&self, calls: Vec<ToolCall>) -> Vec<crate::types::ToolMessage> {
+    async fn execute(&self, calls: Vec<ToolCall>) -> Vec<crate::types::ToolResult> {
         tracing::debug!("Executing {} tool calls in parallel", calls.len());
         let mut grouped: HashMap<String, Vec<ToolCall>> = HashMap::new();
         for call in calls {
@@ -71,10 +71,7 @@ impl ToolExecutor for ParallelExecutor {
                 tracing::debug!("Tool '{}' not found", name);
                 calls
                     .into_iter()
-                    .map(|call| crate::types::ToolMessage {
-                        tool_call_id: call.id,
-                        content: format!("Tool '{}' not found", name),
-                    })
+                    .map(|call| super::tool_not_found_result(call.id, &name))
                     .collect::<Vec<_>>()
             }
         });

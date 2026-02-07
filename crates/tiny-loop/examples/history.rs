@@ -2,11 +2,11 @@ mod common;
 
 use common::run_cli_loop;
 use std::io::{Write, stdout};
-use tiny_loop::{Agent, history::History, llm::OpenAIProvider, types::Message};
+use tiny_loop::{Agent, history::History, llm::OpenAIProvider, types::TimedMessage};
 
 pub struct CustomHistory {
     max: usize,
-    messages: Vec<Message>,
+    messages: Vec<TimedMessage>,
 }
 
 impl CustomHistory {
@@ -19,14 +19,14 @@ impl CustomHistory {
 }
 
 impl History for CustomHistory {
-    fn add(&mut self, message: Message) {
+    fn add(&mut self, message: TimedMessage) {
         self.messages.push(message);
         if self.messages.len() > self.max {
             self.messages.remove(0);
         }
     }
 
-    fn get_all(&self) -> &[Message] {
+    fn get_all(&self) -> &[TimedMessage] {
         &self.messages
     }
 }
