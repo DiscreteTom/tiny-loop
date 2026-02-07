@@ -208,3 +208,34 @@ Replace real values with placeholders in examples.
 # - `sh://command` - Include command output, e.g. `sh://git ls-files`
 # - `skill://glob` - Include matched skills, e.g. `skill://~/skills/**/SKILL.md`
 resources = []
+
+
+[[rules]]
+name = "CHANGELOG.md Update"
+description = "Ensure CHANGELOG.md is updated when code changes"
+instruction = """
+Check if CHANGELOG.md needs to be updated based on code changes.
+
+Steps:
+1. Read focused files to understand what changed
+2. Read CHANGELOG.md to check if changes are documented
+3. Report violation if code changes are not reflected in CHANGELOG.md
+
+Violation criteria - Report if:
+- Rust source files are modified but CHANGELOG.md is not updated
+- New features, bug fixes, or breaking changes are not documented
+- The [Unreleased] section is empty when code changes exist
+
+Exemptions - Do NOT report:
+- CHANGELOG.md itself is being updated
+- Only test files are modified
+- Changes are trivial (typos, formatting, comments only)
+"""
+scope = ["**/*.rs"]
+exclude = []
+max_files_per_task = 10
+blocking = true
+tip = """
+Add an entry to the [Unreleased] section of CHANGELOG.md describing the changes.
+"""
+resources = ["file://CHANGELOG.md"]
