@@ -22,12 +22,14 @@ async fn main() -> anyhow::Result<()> {
         .system("You are a helpful assistant with access to tools")
         .tool(get_weather);
 
-    agent.history.add(
-        tiny_loop::types::UserMessage {
+    agent.history.add(tiny_loop::types::TimedMessage {
+        message: tiny_loop::types::UserMessage {
             content: "What's the weather in Tokyo?".into(),
         }
         .into(),
-    );
+        timestamp: std::time::SystemTime::now(),
+        elapsed: std::time::Duration::ZERO,
+    });
 
     // Custom loop with iteration limit
     let mut iterations = 0;
