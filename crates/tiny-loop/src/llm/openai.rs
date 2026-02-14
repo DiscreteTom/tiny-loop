@@ -186,10 +186,12 @@ impl OpenAIProvider {
         mut self,
         key: impl Into<String>,
         value: impl Into<String>,
-    ) -> anyhow::Result<Self> {
+    ) -> crate::Result<Self> {
         self.custom_headers.insert(
-            HeaderName::try_from(key.into())?,
-            HeaderValue::try_from(value.into())?,
+            HeaderName::try_from(key.into())
+                .map_err(|e| crate::Error::InvalidHeader(e.to_string()))?,
+            HeaderValue::try_from(value.into())
+                .map_err(|e| crate::Error::InvalidHeader(e.to_string()))?,
         );
         Ok(self)
     }
@@ -243,11 +245,8 @@ impl OpenAIProvider {
     /// # Errors
     ///
     /// Returns an error if the value is not a JSON object
-    pub fn body(mut self, body: Value) -> anyhow::Result<Self> {
-        self.custom_body = body
-            .as_object()
-            .ok_or_else(|| anyhow::anyhow!("body must be a JSON object"))?
-            .clone();
+    pub fn body(mut self, body: Value) -> crate::Result<Self> {
+        self.custom_body = body.as_object().ok_or(crate::Error::InvalidBody)?.clone();
         Ok(self)
     }
 
@@ -276,7 +275,7 @@ impl super::LLMProvider for OpenAIProvider {
         &mut self,
         messages: &[Message],
         tools: &[ToolDefinition],
-    ) -> anyhow::Result<LLMResponse> {
+    ) -> crate::Result<LLMResponse> {
         let mut attempt = 0;
         loop {
             attempt += 1;
@@ -311,7 +310,7 @@ impl OpenAIProvider {
         &mut self,
         messages: &[Message],
         tools: &[ToolDefinition],
-    ) -> anyhow::Result<LLMResponse> {
+    ) -> crate::Result<LLMResponse> {
         let request = ChatRequest {
             model: self.model.clone(),
             messages: messages.to_vec(),
@@ -342,19 +341,26 @@ impl OpenAIProvider {
         if !status.is_success() {
             let body = response.text().await?;
             tracing::debug!("LLM API error: status={}, body={}", status, body);
-            anyhow::bail!("API error ({}): {}", status, body);
+            return Err(crate::Error::ApiError {
+                status: status.as_u16(),
+                body,
+            });
         }
 
         if self.stream_callback.is_some() {
             self.handle_stream(response).await
         } else {
             let body = response.text().await?;
-            let chat_response: ChatResponse = serde_json::from_str(&body)
-                .map_err(|e| anyhow::anyhow!("Failed to parse response: {}. Body: {}", e, body))?;
+            let chat_response: ChatResponse = serde_json::from_str(&body).map_err(|e| {
+                crate::Error::Custom(format!("Failed to parse response: {}. Body: {}", e, body))
+            })?;
             tracing::debug!("LLM API call completed successfully");
             let choice = &chat_response.choices[0];
             let Message::Assistant(msg) = &choice.message else {
-                anyhow::bail!("Expected Assistant message, got: {:?}", choice.message);
+                return Err(crate::Error::UnexpectedMessage(format!(
+                    "{:?}",
+                    choice.message
+                )));
             };
             Ok(LLMResponse {
                 message: msg.clone(),
@@ -363,7 +369,7 @@ impl OpenAIProvider {
         }
     }
 
-    async fn handle_stream(&mut self, response: reqwest::Response) -> anyhow::Result<LLMResponse> {
+    async fn handle_stream(&mut self, response: reqwest::Response) -> crate::Result<LLMResponse> {
         use futures::TryStreamExt;
 
         let mut stream = response.bytes_stream();

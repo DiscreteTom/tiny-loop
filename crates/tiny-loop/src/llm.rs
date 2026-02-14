@@ -13,5 +13,5 @@ pub trait LLMProvider: Send + Sync {
         &mut self,
         messages: &[Message],
         tools: &[ToolDefinition],
-    ) -> anyhow::Result<LLMResponse>;
+    ) -> crate::Result<LLMResponse>;
 }

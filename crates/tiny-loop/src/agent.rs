@@ -247,7 +247,7 @@ impl Agent {
     /// ```
     /// use tiny_loop::{Agent, llm::OpenAIProvider};
     ///
-    /// # async fn example() -> anyhow::Result<()> {
+    /// # async fn example() -> tiny_loop::Result<()> {
     /// let mut agent = Agent::new(OpenAIProvider::new())
     ///     .system("You are a helpful assistant");
     ///
@@ -270,7 +270,7 @@ impl Agent {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn step(&mut self) -> anyhow::Result<Option<String>> {
+    pub async fn step(&mut self) -> crate::Result<Option<String>> {
         tracing::trace!("Calling LLM with {} messages", self.history.get_all().len());
 
         let messages: Vec<_> = self
@@ -322,7 +322,7 @@ impl Agent {
 
     /// Run the agent loop until completion.
     /// Return the last AI's response
-    pub async fn run(&mut self) -> anyhow::Result<String> {
+    pub async fn run(&mut self) -> crate::Result<String> {
         tracing::debug!("Starting agent loop");
         loop {
             if let Some(content) = self.step().await? {
@@ -333,7 +333,7 @@ impl Agent {
 
     /// Run the agent loop with a new user input appended.
     /// Return the last AI's response
-    pub async fn chat(&mut self, prompt: impl Into<String>) -> anyhow::Result<String> {
+    pub async fn chat(&mut self, prompt: impl Into<String>) -> crate::Result<String> {
         let prompt = prompt.into();
         tracing::debug!("Chat request, prompt length: {}", prompt.len());
         self.history.add(crate::types::TimedMessage {

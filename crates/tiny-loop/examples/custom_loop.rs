@@ -10,7 +10,7 @@ async fn get_weather(
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> tiny_loop::Result<()> {
     let api_key = std::env::var("LLM_API_KEY").expect("LLM_API_KEY not set");
 
     let llm = OpenAIProvider::new()
@@ -43,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
 
         iterations += 1;
         if iterations > 10 {
-            return Err(anyhow::anyhow!("Max iterations reached"));
+            return Err(tiny_loop::Error::Custom("Max iterations reached".into()));
         }
     }
 
