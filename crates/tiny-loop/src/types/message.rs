@@ -117,7 +117,7 @@ pub struct FunctionCall {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TimedMessage {
     pub message: Message,
-    /// When the message was created
+    /// When the message was completed
     pub timestamp: SystemTime,
     /// Time taken to generate this message
     pub elapsed: Duration,
@@ -127,7 +127,7 @@ pub struct TimedMessage {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ToolResult {
     pub tool_message: ToolMessage,
-    /// When the tool execution started
+    /// When the tool execution completed
     pub timestamp: SystemTime,
     /// Time taken to execute the tool
     pub elapsed: Duration,

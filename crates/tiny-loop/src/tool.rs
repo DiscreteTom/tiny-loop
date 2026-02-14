@@ -31,7 +31,7 @@ pub trait Tool {
                 tool_call_id: call.id,
                 content,
             },
-            timestamp: start,
+            timestamp: start + elapsed,
             elapsed,
         }
     }

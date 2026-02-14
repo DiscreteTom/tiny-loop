@@ -285,7 +285,7 @@ impl Agent {
 
         self.history.add(crate::types::TimedMessage {
             message: response.message.clone().into(),
-            timestamp: start,
+            timestamp: start + elapsed,
             elapsed,
         });
 
