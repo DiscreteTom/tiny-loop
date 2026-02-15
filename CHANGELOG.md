@@ -13,12 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking**: Replaced `anyhow` with `thiserror` for structured error handling
 - **Breaking**: All public APIs now return `tiny_loop::Result<T>` instead of `anyhow::Result<T>`
+- **Breaking**: `TimedMessage.timestamp` and `ToolResult.timestamp` now correctly represent completion time instead of start time
 - Added `tiny_loop::Error` enum with specific error variants
 - Moved error types to dedicated `error` module
-
-### Fixed
-
-- `TimedMessage.timestamp` and `ToolResult.timestamp` now correctly represent completion time instead of start time
 
 ## [0.4.1] - 2026-02-07
 
