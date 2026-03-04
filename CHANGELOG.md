@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `#[tool]` macro now derives `Serialize`, `Clone`, and `Debug` for generated ToolArgs structs
+
 ## [0.5.0] - 2026-02-14
 
 ### Changed

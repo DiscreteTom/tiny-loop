@@ -127,7 +127,7 @@ fn tool_impl_block(
             let tool_description = &s.tool_description;
             quote! {
                 #[doc = concat!("Arguments for the `", #tool_name, "` tool.")]
-                #[derive(serde::Deserialize, schemars::JsonSchema)]
+                #[derive(serde::Deserialize, serde::Serialize, schemars::JsonSchema, Clone, Debug)]
                 pub struct #name {
                     #fields
                 }
@@ -198,7 +198,7 @@ fn tool_impl_fn(
 
     let expanded = quote! {
         #[doc = concat!("Arguments for the `", #tool_name, "` tool.")]
-        #[derive(serde::Deserialize, schemars::JsonSchema)]
+        #[derive(serde::Deserialize, serde::Serialize, schemars::JsonSchema, Clone, Debug)]
         pub struct #struct_name {
             #fields
         }

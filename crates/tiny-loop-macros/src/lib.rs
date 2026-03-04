@@ -103,7 +103,7 @@ use quote::quote;
 /// Expands to:
 /// ```ignore
 /// /// Arguments for the `fetch` tool.
-/// #[derive(serde::Deserialize, schemars::JsonSchema)]
+/// #[derive(serde::Deserialize, serde::Serialize, schemars::JsonSchema, Clone, Debug)]
 /// pub struct FetchArgs {
 ///     /// URL to fetch
 ///     pub url: String,
@@ -141,7 +141,7 @@ use quote::quote;
 /// Expands to:
 /// ```ignore
 /// /// Arguments for the `query` tool.
-/// #[derive(serde::Deserialize, schemars::JsonSchema)]
+/// #[derive(serde::Deserialize, serde::Serialize, schemars::JsonSchema, Clone, Debug)]
 /// pub struct QueryArgs {
 ///     /// SQL query
 ///     pub sql: String,
